@@ -4,28 +4,12 @@ import kotlin.math.abs
 
 fun main() {
     fun part1(input: List<String>): Int {
-        val left = mutableListOf<Int>()
-        val right = mutableListOf<Int>()
+        val cols = input.filter { it.isNotEmpty() }.map { it.split("\\s+".toRegex()) }
 
-        input.forEach { line ->
-            if (line.isNotEmpty()) {
-                val (a, b) = line.split("\\s+".toRegex())
-                left.add(a.toInt())
-                right.add(b.toInt())
-            }
-        }
+        val left = cols.map { it[0].toInt() }.sorted()
+        val right = cols.map { it[1].toInt() }.sorted()
 
-        val leftSorted = left.sorted()
-        val rightSorted = right.sorted()
-
-        var result = 0
-
-        for ((index, value) in leftSorted.withIndex()) {
-            val diff = abs(leftSorted[index] - rightSorted[index])
-            result += diff
-        }
-
-        return result
+        return left.indices.sumOf { abs(left[it] - right[it]) }
     }
 
     fun part2(input: List<String>): Long {
@@ -51,7 +35,7 @@ fun main() {
             if (right.containsKey(it)) {
                 val rightValue = right[it]!!
 
-                println("key $it appears $rightValue times on right")
+//                println("key $it appears $rightValue times on right")
                 result += (it.toLong() * rightValue.toLong())
             }
         }
