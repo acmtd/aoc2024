@@ -3,21 +3,21 @@ package aoc2024
 import kotlin.math.abs
 
 fun main() {
-    fun part1(input: List<String>): Int {
+    fun getLists(input: List<String>): Pair<List<Int>, List<Int>> {
         val cols = input.filter { it.isNotEmpty() }.map { it.split("\\s+".toRegex()) }
-
         val left = cols.map { it[0].toInt() }.sorted()
         val right = cols.map { it[1].toInt() }.sorted()
 
+        return Pair(left, right)
+    }
+
+    fun part1(input: List<String>): Int {
+        val (left, right) = getLists(input)
         return left.indices.sumOf { abs(left[it] - right[it]) }
     }
 
     fun part2(input: List<String>): Int {
-        val cols = input.filter { it.isNotEmpty() }.map { it.split("\\s+".toRegex()) }
-
-        val left = cols.map { it[0].toInt() }
-        val right = cols.map { it[1].toInt() }
-
+        val (left, right) = getLists(input)
         return left.sumOf { l -> l * right.count { it == l } }
     }
 
