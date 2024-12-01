@@ -1,3 +1,5 @@
+package aoc2024
+
 import java.math.BigInteger
 import java.security.MessageDigest
 import kotlin.io.path.Path
@@ -6,7 +8,9 @@ import kotlin.io.path.readText
 /**
  * Reads lines from the given input txt file.
  */
-fun readInput(name: String) = Path("src/$name.txt").readText().trim().lines()
+fun readAsString(name: String) = Path("src/main/resources/$name.txt").readText().trim()
+fun readAsLines(name: String) = readAsString(name).lines()
+fun readAsBlocks(name: String) = readAsString(name).split("\n\n")
 
 /**
  * Converts string to md5 hash.

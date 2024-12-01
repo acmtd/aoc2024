@@ -4,7 +4,7 @@ plugins {
 
 sourceSets {
     main {
-        kotlin.srcDir("src")
+        kotlin.srcDir("src/main/kotlin")
     }
 }
 
