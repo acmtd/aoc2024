@@ -23,6 +23,7 @@ fun main() {
 
     val testInput = readAsLines("Day01_test")
     check(part1(testInput) == 11)
+    check(part2(testInput) == 31)
 
     val input = readAsLines("Day01")
     part1(input).println()
