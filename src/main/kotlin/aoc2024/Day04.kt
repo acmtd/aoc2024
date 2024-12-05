@@ -1,15 +1,11 @@
 package aoc2024
 
 fun main() {
-    fun horizontals(input: List<String>): List<String> {
+    fun horizontalsAndVerticals(input: List<String>): List<String> {
         return mutableListOf<String>().apply {
             addAll(input)
             addAll(input.map { it.reversed() })
-        }
-    }
 
-    fun verticals(input: List<String>): List<String> {
-        return mutableListOf<String>().apply {
             val verticals = input.indices.map { col -> input.map { it[col] }.joinToString("") }
 
             addAll(verticals)
@@ -17,97 +13,55 @@ fun main() {
         }
     }
 
-    fun diagonals(input: List<String>): List<String> {
-        return mutableListOf<String>().apply {
-            val coordinates = mutableSetOf<Pair<Int, Int>>()
+    fun perimeter(input: List<String>): MutableSet<Pair<Int, Int>> {
+        val coordinates = mutableSetOf<Pair<Int, Int>>()
 
-            val maxVal = input.size - 1
+        input.indices.forEach { row ->
+            coordinates += Pair(row, 0)
+            coordinates += Pair(0, row)
+            coordinates += Pair(input.size - 1, row)
+            coordinates += Pair(row, input.size - 1)
+        }
 
-            input.indices.forEach { row ->
-                coordinates += Pair(row, 0)
-                coordinates += Pair(0, row)
-                coordinates += Pair(maxVal, row)
-                coordinates += Pair(row, maxVal)
-            }
+        return coordinates
+    }
 
-            coordinates.forEach { p ->
-                if (p.second < maxVal && p.first < maxVal) {
-                    var x = p.first
-                    var y = p.second
+    data class Transform(val deltaX: Int, val deltaY: Int) {
+        fun isPossible(pos: Pair<Int, Int>, maxVal: Int): Boolean {
+            if (pos.first + deltaX < 0 || pos.first + deltaX > maxVal) return false
+            if (pos.second + deltaY < 0 || pos.second + deltaY > maxVal) return false
+            return true
+        }
 
-                    var s = ""
+        fun apply(p: Pair<Int, Int>) = Pair(p.first + deltaX, p.second + deltaY)
+    }
 
-                    while (x <= maxVal && y <= maxVal) {
-                        s += input[x][y]
-                        x++
-                        y++
-                    }
+    val transforms = listOf(
+        Transform(1, 1),
+        Transform(1, -1),
+        Transform(-1, -1),
+        Transform(-1, 1)
+    )
 
-                    add(s)
-                }
-
-                if (p.second < maxVal && p.first > 0) {
-                    var x = p.first
-                    var y = p.second
-
-                    var s = ""
-
-                    while (x >= 0 && y <= maxVal) {
-                        s += input[x][y]
-                        x--
-                        y++
-                    }
-
-                    add(s)
-                }
-
-                if (p.second > 0 && p.first < maxVal) {
-                    var x = p.first
-                    var y = p.second
-
-                    var s = ""
-
-                    while (x <= maxVal && y >= 0) {
-                        s += input[x][y]
-                        x++
-                        y--
-                    }
-
-                    add(s)
-                }
-
-                if (p.second > 0 && p.first > 0) {
-                    var x = p.first
-                    var y = p.second
-
-                    var s = ""
-
-                    while (x >= 0 && y >= 0) {
-                        s += input[x][y]
-                        x--
-                        y--
-                    }
-
-                    add(s)
-                }
-            }
+    fun diagonalValue(p: Pair<Int, Int>, t: Transform, s: String, input: List<String>): String {
+        return if (t.isPossible(p, input.size - 1)) {
+            diagonalValue(t.apply(p), t, s + input[p.first][p.second], input)
+        } else {
+            s + input[p.first][p.second]
         }
     }
 
+    fun diagonals(input: List<String>) =
+        perimeter(input).flatMap { p ->
+            transforms.filter { t -> t.isPossible(p, input.size - 1) }
+                .map { t -> diagonalValue(p, t, "", input) }
+        }
+
     fun diagonalSams(input: List<String>): List<Pair<Int, Int>> {
         return mutableListOf<Pair<Int, Int>>().apply {
-            val coordinates = mutableSetOf<Pair<Int, Int>>()
-
             val maxVal = input.size - 1
 
-            input.indices.forEach { row ->
-                coordinates += Pair(row, 0)
-                coordinates += Pair(0, row)
-                coordinates += Pair(maxVal, row)
-                coordinates += Pair(row, maxVal)
-            }
-
-            coordinates.forEach { p ->
+            perimeter(input).forEach { p ->
                 if (p.second < maxVal && p.first < maxVal) {
                     var x = p.first
                     var y = p.second
@@ -204,11 +158,7 @@ fun main() {
     }
 
     fun lines(input: List<String>): List<String> {
-        return mutableListOf<String>().apply {
-            addAll(horizontals(input))
-            addAll(verticals(input))
-            addAll(diagonals(input))
-        }
+        return horizontalsAndVerticals(input) + diagonals(input)
     }
 
     fun part1(input: List<String>): Int {
