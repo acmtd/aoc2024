@@ -34,6 +34,16 @@ fun main() {
         }
 
         fun apply(p: Pair<Int, Int>) = Pair(p.first + deltaX, p.second + deltaY)
+
+        fun apply(p: Pair<Int, Int>, iterations: Int): Pair<Int, Int> {
+            var p2 = p
+
+            repeat(iterations) {
+                p2 = apply(p2)
+            }
+
+            return p2
+        }
     }
 
     val transforms = listOf(
@@ -57,101 +67,21 @@ fun main() {
                 .map { t -> diagonalValue(p, t, "", input) }
         }
 
+    fun samFinder(
+        pos: Pair<Int, Int>, t: Transform, s: String, startIdx: Int, found: MutableList<Pair<Int, Int>>
+    ): List<Pair<Int, Int>> {
+        val index = s.indexOf("SAM", startIdx)
+        if (index == -1) return found
+
+        found.add(t.apply(pos, index + 1))
+        return samFinder(pos, t, s, index + 1, found)
+    }
+
     fun diagonalSams(input: List<String>): List<Pair<Int, Int>> {
         return mutableListOf<Pair<Int, Int>>().apply {
-            val maxVal = input.size - 1
-
             perimeter(input).forEach { p ->
-                if (p.second < maxVal && p.first < maxVal) {
-                    var x = p.first
-                    var y = p.second
-
-                    var s = ""
-
-                    while (x <= maxVal && y <= maxVal) {
-                        s += input[x][y]
-                        x++
-                        y++
-                    }
-
-                    var index = 0
-
-                    while (index > -1) {
-                        index = s.indexOf("SAM", index)
-                        if (index > -1) {
-                            add(Pair(p.first + index + 1, p.second + index + 1))
-                            index++
-                        }
-                    }
-                }
-
-                if (p.second < maxVal && p.first > 0) {
-                    var x = p.first
-                    var y = p.second
-
-                    var s = ""
-
-                    while (x >= 0 && y <= maxVal) {
-                        s += input[x][y]
-                        x--
-                        y++
-                    }
-
-                    var index = 0
-
-                    while (index > -1) {
-                        index = s.indexOf("SAM", index)
-                        if (index > -1) {
-                            add(Pair(p.first - index - 1, p.second + index + 1))
-                            index++
-                        }
-                    }
-                }
-
-                if (p.second > 0 && p.first < maxVal) {
-                    var x = p.first
-                    var y = p.second
-
-                    var s = ""
-
-                    while (x <= maxVal && y >= 0) {
-                        s += input[x][y]
-                        x++
-                        y--
-                    }
-
-                    var index = 0
-
-                    while (index > -1) {
-                        index = s.indexOf("SAM", index)
-                        if (index > -1) {
-                            add(Pair(p.first + index + 1, p.second - index - 1))
-                            index++
-                        }
-                    }
-                }
-
-                if (p.second > 0 && p.first > 0) {
-                    var x = p.first
-                    var y = p.second
-
-                    var s = ""
-
-                    while (x >= 0 && y >= 0) {
-                        s += input[x][y]
-                        x--
-                        y--
-                    }
-
-                    var index = 0
-
-                    while (index > -1) {
-                        index = s.indexOf("SAM", index)
-                        if (index > -1) {
-                            add(Pair(p.first - index - 1, p.second - index - 1))
-                            index++
-                        }
-                    }
+                transforms.filter { t -> t.isPossible(p, input.size - 1) }.forEach { t ->
+                    samFinder(p, t, diagonalValue(p, t, "", input), 0, this)
                 }
             }
         }
