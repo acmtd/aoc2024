@@ -1,5 +1,7 @@
 package aoc2024
 
+import kotlin.time.measureTime
+
 class Direction(val deltaRow: Int, val deltaCol: Int) {
     companion object {
         val UP = Direction(-1, 0)
@@ -93,29 +95,24 @@ fun main() {
 
         input.indices.forEach { row ->
             input.indices.forEach { col ->
-                val (grid, initialState) = makeGrid(input)
+                var (grid, state) = makeGrid(input)
 
                 if (grid[row][col] == '.') {
                     grid[row][col] = '#'
 
-                    var state = initialState
+                    val visited = mutableSetOf<State>()
 
-                    val visited = mutableSetOf<State>().apply { add(initialState) }
-
-                    var loop = false
-
-                    do {
-                        state = state.move(grid)
-                        if (visited.contains(state)) loop = true
+                    while (!state.done) {
                         visited.add(state)
-                    } while (!state.done && !loop)
+                        state = state.move(grid)
+                        if (state in visited) break
+                    }
 
-                    if (loop) loopCount++
+                    if (!state.done) loopCount++
                 }
             }
         }
 
-        println("loop count: $loopCount")
         return loopCount
     }
 
@@ -124,7 +121,9 @@ fun main() {
     check(part2(testInput) == 6)
 
     val input = readAsLines("Day06")
-    part1(input).println() // 4515
-    part2(input).println()
+    part1(input).println()
+    measureTime {
+        part2(input).println()
+    }.also { it.println() } // 3.1 seconds
 }
 
