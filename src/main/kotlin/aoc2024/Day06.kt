@@ -75,7 +75,7 @@ fun main() {
     }
 
 
-    fun part1(input: List<String>): Int {
+    fun getVisited(input: List<String>): Set<State> {
         val (grid, initialState) = makeGrid(input)
 
         var state = initialState
@@ -87,29 +87,31 @@ fun main() {
             visited.add(state)
         } while (!state.done)
 
-        return visited.map { it.pos }.distinct().count()
+        return visited
+    }
+
+    fun part1(input: List<String>): Int {
+        return getVisited(input).map { it.pos }.distinct().count()
     }
 
     fun part2(input: List<String>): Int {
         var loopCount = 0
 
-        input.indices.forEach { row ->
-            input.indices.forEach { col ->
-                var (grid, state) = makeGrid(input)
+        getVisited(input).map { s -> s.pos }.distinct().forEach { pos ->
+            var (grid, state) = makeGrid(input)
 
-                if (grid[row][col] == '.') {
-                    grid[row][col] = '#'
+            if (grid[pos.row][pos.col] == '.') {
+                grid[pos.row][pos.col] = '#'
 
-                    val visited = mutableSetOf<State>()
+                val visited = mutableSetOf<State>()
 
-                    while (!state.done) {
-                        visited.add(state)
-                        state = state.move(grid)
-                        if (state in visited) break
-                    }
-
-                    if (!state.done) loopCount++
+                while (!state.done) {
+                    visited.add(state)
+                    state = state.move(grid)
+                    if (state in visited) break
                 }
+
+                if (!state.done) loopCount++
             }
         }
 
@@ -124,6 +126,6 @@ fun main() {
     part1(input).println()
     measureTime {
         part2(input).println()
-    }.also { it.println() } // 3.1 seconds
+    }.also { it.println() }
 }
 
