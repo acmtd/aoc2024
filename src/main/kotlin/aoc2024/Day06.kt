@@ -88,10 +88,43 @@ fun main() {
         return visited.map { it.pos }.distinct().count()
     }
 
+    fun part2(input: List<String>): Int {
+        var loopCount = 0
+
+        input.indices.forEach { row ->
+            input.indices.forEach { col ->
+                val (grid, initialState) = makeGrid(input)
+
+                if (grid[row][col] == '.') {
+                    grid[row][col] = '#'
+
+                    var state = initialState
+
+                    val visited = mutableSetOf<State>().apply { add(initialState) }
+
+                    var loop = false
+
+                    do {
+                        state = state.move(grid)
+                        if (visited.contains(state)) loop = true
+                        visited.add(state)
+                    } while (!state.done && !loop)
+
+                    if (loop) loopCount++
+                }
+            }
+        }
+
+        println("loop count: $loopCount")
+        return loopCount
+    }
+
     val testInput = readAsLines("Day06_test")
     check(part1(testInput) == 41)
+    check(part2(testInput) == 6)
 
     val input = readAsLines("Day06")
     part1(input).println() // 4515
+    part2(input).println()
 }
 
