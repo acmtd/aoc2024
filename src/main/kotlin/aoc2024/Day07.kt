@@ -1,5 +1,7 @@
 package aoc2024
 
+import kotlin.time.measureTime
+
 fun main() {
     fun calibrates(target: Long, values: List<Long>, part2: Boolean): Boolean {
         val queue = ArrayDeque<List<Long>>()
@@ -58,6 +60,9 @@ fun main() {
 
     val input = readAsLines("Day07")
     part1(input).println()
-    part2(input).println()
+
+    measureTime {
+        part2(input).println()
+    }.also { it.println() } // 800ms
 }
 
