@@ -12,7 +12,8 @@ fun main() {
         while (queue.isNotEmpty() && !calculated) {
             val digits = queue.removeFirst()
 
-            val operands = digits.subList(0, 2)
+            val operands = digits.take(2)
+
             val results = buildList {
                 add(operands[0] * operands[1])
                 add(operands[0] + operands[1])
@@ -63,6 +64,6 @@ fun main() {
 
     measureTime {
         part2(input).println()
-    }.also { it.println() } // 800ms
+    }.also { it.println() } // 600ms
 }
 
