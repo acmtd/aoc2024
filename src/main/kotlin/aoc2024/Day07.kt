@@ -17,20 +17,18 @@ fun main() {
                 if (part2) add("${operands[0]}${operands[1]}".toLong())
             }
 
-            if (digits.size > 2) {
-                val remainder = digits.subList(2, digits.size)
+            val remainder = digits.drop(2)
 
-                results.filter { it <= target }.map {
+            if (remainder.isNotEmpty()) {
+                queue.addAll(results.filter { it <= target }.map {
                     buildList {
                         add(it)
                         addAll(remainder)
                     }
-                }.forEach { queue.add(it) }
+                })
             } else {
                 // no more operands so see if we have the result
-                if (results.any { it == target }) {
-                    calculated = true
-                }
+                if (results.any { it == target }) calculated = true
             }
         }
 
