@@ -2,15 +2,15 @@ package aoc2024
 
 import kotlin.time.measureTime
 
-class Direction(val deltaRow: Int, val deltaCol: Int) {
+class D6Direction(val deltaRow: Int, val deltaCol: Int) {
     companion object {
-        val UP = Direction(-1, 0)
-        val DOWN = Direction(1, 0)
-        val LEFT = Direction(0, -1)
-        val RIGHT = Direction(0, 1)
+        val UP = D6Direction(-1, 0)
+        val DOWN = D6Direction(1, 0)
+        val LEFT = D6Direction(0, -1)
+        val RIGHT = D6Direction(0, 1)
     }
 
-    fun nextDirection(): Direction {
+    fun nextDirection(): D6Direction {
         when (this) {
             UP -> return RIGHT
             DOWN -> return LEFT
@@ -25,62 +25,62 @@ class Direction(val deltaRow: Int, val deltaCol: Int) {
     }
 }
 
-data class Position(val row: Int, val col: Int) {
-    fun transform(direction: Direction): Position {
-        return Position(row + direction.deltaRow, col + direction.deltaCol)
+data class D6Pos(val row: Int, val col: Int) {
+    fun transform(direction: D6Direction): D6Pos {
+        return D6Pos(row + direction.deltaRow, col + direction.deltaCol)
     }
 
     fun outOfBounds(grid: Array<CharArray>) =
         (col < 0 || row < 0 || col >= grid.first().size || row >= grid.size)
 }
 
-data class State(val pos: Position, val dir: Direction, val done: Boolean = false) {
-    fun move(grid: Array<CharArray>): State {
+data class D6State(val pos: D6Pos, val dir: D6Direction, val done: Boolean = false) {
+    fun move(grid: Array<CharArray>): D6State {
         val nextPosition = pos.transform(dir)
 
         if (nextPosition.outOfBounds(grid)) {
-            return State(pos, dir, true)
+            return D6State(pos, dir, true)
         }
 
         val content = grid[nextPosition.row][nextPosition.col]
 
         if (content == '#') {
-            return State(pos, dir.nextDirection())
+            return D6State(pos, dir.nextDirection())
         } else {
-            return State(nextPosition, dir)
+            return D6State(nextPosition, dir)
         }
     }
 }
 
 fun main() {
-    fun makeGrid(input: List<String>): Pair<Array<CharArray>, State> {
+    fun makeGrid(input: List<String>): Pair<Array<CharArray>, D6State> {
         val rows = input.size
         val cols = input.first().length
 
         val grid = Array(rows) { CharArray(cols) }
 
-        var startPos = Position(0, 0)
+        var startPos = D6Pos(0, 0)
 
         for ((row, line) in input.withIndex()) {
             for ((col, character) in line.withIndex()) {
                 grid[row][col] = character
 
                 if (character == '^') {
-                    startPos = Position(row, col)
+                    startPos = D6Pos(row, col)
                 }
             }
         }
         // we start by going up
-        return Pair(grid, State(startPos, Direction.UP))
+        return Pair(grid, D6State(startPos, D6Direction.UP))
     }
 
 
-    fun getVisited(input: List<String>): Set<State> {
+    fun getVisited(input: List<String>): Set<D6State> {
         val (grid, initialState) = makeGrid(input)
 
         var state = initialState
 
-        val visited = mutableSetOf<State>().apply { add(initialState) }
+        val visited = mutableSetOf<D6State>().apply { add(initialState) }
 
         do {
             state = state.move(grid)
@@ -103,7 +103,7 @@ fun main() {
             if (grid[pos.row][pos.col] == '.') {
                 grid[pos.row][pos.col] = '#'
 
-                val visited = mutableSetOf<State>()
+                val visited = mutableSetOf<D6State>()
 
                 while (!state.done) {
                     visited.add(state)
