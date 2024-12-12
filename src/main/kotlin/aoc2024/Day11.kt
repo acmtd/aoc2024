@@ -1,8 +1,9 @@
 package aoc2024
 
+import kotlin.time.measureTime
+
 fun main() {
-    val splitMap = hashMapOf<String, List<String>>()
-    val multiplyMap = hashMapOf<String, String>()
+    val blinkMap = hashMapOf<String, List<String>>()
 
     fun removeLeadingZeros(s: String): String {
         val removed = s.trimStart('0')
@@ -12,59 +13,55 @@ fun main() {
     }
 
     fun splitNumber(s: String): List<String> {
-        return splitMap.getOrPut(s) {
-            listOf(
-                s.substring(0, s.length / 2),
-                removeLeadingZeros(s.substring(s.length / 2, s.length))
-            )
-        }
+        return listOf(
+            s.substring(0, s.length / 2),
+            removeLeadingZeros(s.substring(s.length / 2, s.length))
+        )
     }
 
     fun multiplyNumber(s: String): String {
-        return multiplyMap.getOrPut(s) { (s.toLong() * 2024).toString() }
+        return (s.toLong() * 2024).toString()
     }
 
-    fun blink(stones: List<String>): List<String> {
-        return buildList {
-            stones.map {
-                if (it == "0") {
+    fun blink(stone: String): List<String> {
+        return blinkMap.getOrPut(stone) {
+            buildList {
+                if (stone == "0") {
                     add("1")
-                } else if (it.length % 2 == 0) {
-                    addAll(splitNumber(it))
+                } else if (stone.length % 2 == 0) {
+                    addAll(splitNumber(stone))
                 } else {
-                    add(multiplyNumber(it))
+                    add(multiplyNumber(stone))
                 }
             }
         }
     }
 
-    fun parse(input: String): List<String> {
-        return input.split(" ")
-    }
-
-    fun blinksForSingleStone(stone: String, blinks: Int): Int {
-        var arrangement = listOf(stone)
-
-        repeat(blinks) {
-            arrangement = blink(arrangement)
+    fun doBlinks(input: String, blinks: Int): Long {
+        val stoneCounts = mutableMapOf<String, Long>().apply {
+            input.split(" ").forEach { this[it] = 1 }
         }
 
-        return arrangement.size
+        repeat(blinks) {
+            stoneCounts.filter { it.value > 0 }
+                .forEach { (stone, count) ->
+                    stoneCounts[stone] = stoneCounts[stone]!! - count
+
+                    blink(stone).forEach { newStone ->
+                        stoneCounts[newStone] = stoneCounts.getOrDefault(newStone, 0) + count
+                    }
+                }
+        }
+
+        return stoneCounts.values.sum()
     }
 
-    fun doBlinks(stones: List<String>, blinks: Int): Int {
-        return stones.sumOf { blinksForSingleStone(it, blinks) }
-    }
+    val testInput = "125 17"
+    check(doBlinks(testInput, 6) == 22.toLong())
+    check(doBlinks(testInput, 25) == 55312.toLong())
 
-    fun part2(input: List<String>): Int {
-        return 0
-    }
-
-    val testInput = parse("125 17")
-    check(doBlinks(testInput, 6) == 22)
-    check(doBlinks(testInput, 25) == 55312)
-
-    val input = parse(readAsString("Day11"))
-    doBlinks(input, 25).println() // 209412
+    val input = readAsString("Day11")
+    measureTime { doBlinks(input, 25).println() }.also { it.println() } // 5ms for part 1
+    measureTime { doBlinks(input, 75).println() }.also { it.println() } // 28ms for part 2
 }
 
