@@ -135,14 +135,14 @@ fun main() {
         return getPlots(input).sumOf { it.area() * it.numberOfSides() }
     }
 
+    val testInput = readAsLines("Day12_maintest")
+    check(part1(testInput) == 1930)
+    check(part2(testInput) == 1206)
+
     check(part2(readAsLines("Day12_part2_test1")) == 80)
     check(part2(readAsLines("Day12_part2_test2")) == 236)
     check(part2(readAsLines("Day12_part2_test3")) == 368)
     check(part2(readAsLines("Day12_part2_test4")) == 436)
-
-    val testInput = readAsLines("Day12_maintest")
-    check(part1(testInput) == 1930)
-    check(part2(testInput) == 1206)
 
     val input = readAsLines("Day12")
     measureTime { part1(input).println() }.also { it.println()} // 75ms
