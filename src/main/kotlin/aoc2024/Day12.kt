@@ -47,29 +47,7 @@ class Day12 {
         private fun adjacency(p: Position) = positions.count { p2 -> p.isAdjacentTo(p2) }
         private fun adjacent(p: Position, d: Direction) = p.move(d) in positions
 
-        private fun consecutiveLists(positions: List<Position>): List<List<Position>> {
-            val finalResult = mutableListOf<List<Position>>()
-            var currentResult = mutableListOf<Position>()
-
-            (positions + Position(-1, -1)).zipWithNext { p1, p2 ->
-                currentResult.add(p1)
-
-                if (!p1.isAdjacentTo(p2)) {
-                    finalResult.add(currentResult)
-                    currentResult = mutableListOf()
-                }
-            }
-
-            finalResult.add(currentResult)
-
-            return finalResult.filter { it.size > 1 }
-        }
-
-        private fun edges(list: List<Position>): List<Position> {
-            return listOf(list.first(), list.last())
-        }
-
-        fun corners(p: Position): List<Char> {
+        private fun corners(p: Position): List<Char> {
             return buildList {
                 if (!adjacent(p, Direction.UP) && !adjacent(p, Direction.LEFT)) add('r')
                 if (!adjacent(p, Direction.UP) && !adjacent(p, Direction.RIGHT)) add('7')
@@ -84,9 +62,7 @@ class Day12 {
         }
 
         fun numberOfSides(): Int {
-            val corners = positions.map { it to corners(it) }.filter { it.second.isNotEmpty() }
-
-            return corners.sumOf { it.second.size }
+            return positions.map { it to corners(it) }.filter { it.second.isNotEmpty() }.sumOf { it.second.size }
         }
     }
 }
