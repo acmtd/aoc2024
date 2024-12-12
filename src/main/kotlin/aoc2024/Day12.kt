@@ -62,7 +62,7 @@ class Day12 {
         }
 
         fun numberOfSides(): Int {
-            return positions.map { it to corners(it) }.filter { it.second.isNotEmpty() }.sumOf { it.second.size }
+            return positions.map { it to corners(it) }.sumOf { it.second.size }
         }
     }
 }
@@ -145,6 +145,6 @@ fun main() {
     check(part2(testInput) == 1206)
 
     val input = readAsLines("Day12")
-    measureTime { part2(input).println() }.also { it.println()} // 36ms
+    measureTime { part1(input).println() }.also { it.println()} // 75ms
     measureTime { part2(input).println() }.also { it.println()} // 24ms
 }
