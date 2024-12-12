@@ -1,5 +1,6 @@
 package aoc2024
 
+import aoc2024.Day12.Direction.*
 import aoc2024.Day12.Plant
 import aoc2024.Day12.Position
 import aoc2024.Day12.Plot
@@ -9,25 +10,13 @@ import kotlin.time.measureTime
 
 class Day12 {
     enum class Direction(val dx: Int, val dy: Int) {
-        UP(0, -1),
-        DOWN(0, 1),
-        LEFT(-1, 0),
-        RIGHT(1, 0),
-        UP_LEFT(-1, -1),
-        UP_RIGHT(1, -1),
-        DOWN_LEFT(-1, 1),
-        DOWN_RIGHT(1, 1)
+        UP(0, -1), DOWN(0, 1), LEFT(-1, 0), RIGHT(1, 0),
+        UP_LEFT(-1, -1), UP_RIGHT(1, -1),
+        DOWN_LEFT(-1, 1), DOWN_RIGHT(1, 1)
     }
 
     data class Position(val x: Int, val y: Int) {
-        fun neighbours(): List<Position> {
-            return listOf(
-                Position(x + 1, y),
-                Position(x - 1, y),
-                Position(x, y - 1),
-                Position(x, y + 1)
-            )
-        }
+        fun neighbours() = listOf(move(UP), move(DOWN), move(LEFT), move(RIGHT))
 
         fun move(dir: Direction) = Position(x + dir.dx, y + dir.dy)
 
@@ -45,19 +34,19 @@ class Day12 {
         fun perimeter() = positions.sumOf { 4 - adjacency(it) }
 
         private fun adjacency(p: Position) = positions.count { p2 -> p.isAdjacentTo(p2) }
-        private fun adjacent(p: Position, d: Direction) = p.move(d) in positions
+        private fun hasAdjacent(p: Position, d: Direction) = p.move(d) in positions
 
         private fun corners(p: Position): List<Char> {
             return buildList {
-                if (!adjacent(p, Direction.UP) && !adjacent(p, Direction.LEFT)) add('r')
-                if (!adjacent(p, Direction.UP) && !adjacent(p, Direction.RIGHT)) add('7')
-                if (!adjacent(p, Direction.DOWN) && !adjacent(p, Direction.LEFT)) add('L')
-                if (!adjacent(p, Direction.DOWN) && !adjacent(p, Direction.RIGHT)) add(',')
+                if (!hasAdjacent(p, UP) && !hasAdjacent(p, LEFT)) add('r')
+                if (!hasAdjacent(p, UP) && !hasAdjacent(p, RIGHT)) add('7')
+                if (!hasAdjacent(p, DOWN) && !hasAdjacent(p, LEFT)) add('L')
+                if (!hasAdjacent(p, DOWN) && !hasAdjacent(p, RIGHT)) add(',')
 
-                if (adjacent(p, Direction.UP) && adjacent(p, Direction.UP_RIGHT) && !adjacent(p, Direction.RIGHT)) add('r')
-                if (adjacent(p, Direction.DOWN) && adjacent(p, Direction.DOWN_RIGHT) && !adjacent(p, Direction.RIGHT)) add('L')
-                if (adjacent(p, Direction.UP) && adjacent(p, Direction.UP_LEFT) && !adjacent(p, Direction.LEFT)) add('7')
-                if (adjacent(p, Direction.DOWN) && adjacent(p, Direction.DOWN_LEFT) && !adjacent(p, Direction.LEFT)) add(',')
+                if (hasAdjacent(p, UP) && hasAdjacent(p, UP_RIGHT) && !hasAdjacent(p, RIGHT)) add('r')
+                if (hasAdjacent(p, DOWN) && hasAdjacent(p, DOWN_RIGHT) && !hasAdjacent(p, RIGHT)) add('L')
+                if (hasAdjacent(p, UP) && hasAdjacent(p, UP_LEFT) && !hasAdjacent(p, LEFT)) add('7')
+                if (hasAdjacent(p, DOWN) && hasAdjacent(p, DOWN_LEFT) && !hasAdjacent(p, LEFT)) add(',')
             }
         }
 
@@ -87,44 +76,33 @@ fun main() {
 
             if (current !in visited) {
                 visited.add(current)
-
-                // need to get the neighboring plants and see if they should be assigned to the same plot
-                val next = current.neighbours()
-                    .filter { it in map.keys }
-                    .filter { it !in visited }
-
-                queue.addAll(next)
+                queue.addAll(current.neighbours().filter { it in map.keys })
             }
         }
 
         return visited
     }
 
-    fun getPlots(input: List<String>): MutableSet<Plot> {
+    fun getPlots(input: List<String>): Set<Plot> {
         val plants = parse(input)
 
-        val plots = mutableSetOf<Plot>()
+        return buildSet {
+            plants.map { it.type }.distinct().forEach { type ->
+                val plantsOfType = plants.filter { it.type == type }
+                val plantMap = plantsOfType.associateBy { it.position }
 
-        val types = plants.map { it.type }.distinct()
+                val visited = mutableSetOf<Position>()
 
-        types.forEach { type ->
-            val plantsOfType = plants.filter { it.type == type }
-            val plantMap = plantsOfType.associateBy { it.position }
-
-            val visited = mutableSetOf<Position>()
-
-            plantsOfType.forEach { plant ->
-                if (plant.position !in visited) {
-                    val region = walkNeighbours(plant.position, plantMap)
-                    visited.addAll(region)
-
-                    val newPlot = Plot(plant.type, region)
-                    plots.add(newPlot)
+                plantsOfType.forEach { plant ->
+                    if (plant.position !in visited) {
+                        walkNeighbours(plant.position, plantMap).apply {
+                            visited.addAll(this)
+                            add(Plot(plant.type, this))
+                        }
+                    }
                 }
             }
         }
-
-        return plots
     }
 
     fun part1(input: List<String>): Int {
@@ -145,6 +123,6 @@ fun main() {
     check(part2(readAsLines("Day12_part2_test4")) == 436)
 
     val input = readAsLines("Day12")
-    measureTime { part1(input).println() }.also { it.println()} // 75ms
-    measureTime { part2(input).println() }.also { it.println()} // 24ms
+    measureTime { part1(input).println() }.also { it.println() } // 75ms
+    measureTime { part2(input).println() }.also { it.println() } // 24ms
 }
