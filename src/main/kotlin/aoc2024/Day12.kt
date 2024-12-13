@@ -106,7 +106,7 @@ fun main() {
     fun part1(input: List<String>) = getRegions(input).sumOf { it.area() * it.perimeter() }
     fun part2(input: List<String>) = getRegions(input).sumOf { it.area() * it.numberOfSides() }
 
-    val testInput = readAsLines("Day12_maintest")
+    val testInput = readAsLines("Day12_test")
     check(part1(testInput) == 1930)
 
     val input = readAsLines("Day12")
