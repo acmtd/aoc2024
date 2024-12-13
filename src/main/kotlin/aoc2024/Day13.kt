@@ -43,9 +43,14 @@ fun main() {
         // make sure solution is integer
         if (remainder == 0.toLong()) {
             val b = (px * may - py * max).div(may * mbx - max * mby)
+            val bRem = (px * may - py * max) % (may * mbx - max * mby)
 
-            val cost = 3 * a + b
-            return cost
+            // curiously for part 2 still need to check if the B remainder is non-zero,
+            // not entirely sure why this is needed but hey it gives the right answer
+            if (a >= 0 && b >= 0 && bRem == 0.toLong()) {
+                val cost = 3 * a + b
+                return cost
+            }
         }
         return 0
     }
@@ -64,5 +69,5 @@ fun main() {
 
     val input = readAsBlocks("Day13")
     part1(input).println()
-    part2(input).println() // 96019708038790 is too high
+    part2(input).println()
 }
