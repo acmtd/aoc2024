@@ -1,9 +1,9 @@
 package aoc2024
 
 import aoc2024.Day12.Direction.*
-import aoc2024.Day12.Plant
-import aoc2024.Day12.Position
 import aoc2024.Day12.Plot
+import aoc2024.Day12.Position
+import aoc2024.Day12.Region
 import kotlin.math.absoluteValue
 
 import kotlin.time.measureTime
@@ -28,8 +28,8 @@ class Day12 {
         }
     }
 
-    data class Plant(val type: Char, val position: Position) {}
-    data class Plot(val type: Char, val positions: Set<Position>) {
+    data class Plot(val type: Char, val position: Position) {}
+    data class Region(val type: Char, val positions: Set<Position>) {
         fun area() = positions.size
         fun perimeter() = positions.sumOf { 4 - adjacency(it) }
 
@@ -57,15 +57,15 @@ class Day12 {
 }
 
 fun main() {
-    fun parse(input: List<String>): List<Plant> {
+    fun parse(input: List<String>): List<Plot> {
         return input.indices.flatMap { row ->
             input[row].indices.map { col ->
-                Plant(input[row][col], Position(col, row))
+                Plot(input[row][col], Position(col, row))
             }
         }
     }
 
-    fun walkNeighbours(initial: Position, map: Map<Position, Plant>): MutableSet<Position> {
+    fun walkNeighbours(initial: Position, map: Map<Position, Plot>): MutableSet<Position> {
         val queue = ArrayDeque<Position>()
         queue.add(initial)
 
@@ -83,21 +83,21 @@ fun main() {
         return visited
     }
 
-    fun getPlots(input: List<String>): Set<Plot> {
-        val plants = parse(input)
+    fun getRegions(input: List<String>): Set<Region> {
+        val plots = parse(input)
 
         return buildSet {
-            plants.map { it.type }.distinct().forEach { type ->
-                val plantsOfType = plants.filter { it.type == type }
-                val plantMap = plantsOfType.associateBy { it.position }
+            plots.map { it.type }.distinct().forEach { type ->
+                val plotsOfType = plots.filter { it.type == type }
+                val plotMap = plotsOfType.associateBy { it.position }
 
                 val visited = mutableSetOf<Position>()
 
-                plantsOfType.forEach { plant ->
-                    if (plant.position !in visited) {
-                        walkNeighbours(plant.position, plantMap).apply {
+                plotsOfType.forEach { plot ->
+                    if (plot.position !in visited) {
+                        walkNeighbours(plot.position, plotMap).apply {
                             visited.addAll(this)
-                            add(Plot(plant.type, this))
+                            add(Region(plot.type, this))
                         }
                     }
                 }
@@ -106,11 +106,11 @@ fun main() {
     }
 
     fun part1(input: List<String>): Int {
-        return getPlots(input).sumOf { it.area() * it.perimeter() }
+        return getRegions(input).sumOf { it.area() * it.perimeter() }
     }
 
     fun part2(input: List<String>): Int {
-        return getPlots(input).sumOf { it.area() * it.numberOfSides() }
+        return getRegions(input).sumOf { it.area() * it.numberOfSides() }
     }
 
     val testInput = readAsLines("Day12_maintest")
