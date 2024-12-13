@@ -32,11 +32,13 @@ fun main() {
         if (aDividend % aDivisor == 0.toLong()) {
             val a = aDividend.div(aDivisor)
 
-            val bDividend = (px * m.a.my - py * m.a.mx)
-            val bDivisor = (m.a.my * m.b.mx - m.a.mx * m.b.my)
+            // don't need the full equation to find b,
+            // just plug the found a value into one
+            // equation and voilˆ
+            val remaining = px - (a * m.a.mx)
 
-            if (bDividend % bDivisor == 0.toLong()) {
-                val b = bDividend.div(bDivisor)
+            if (remaining % m.b.mx == 0.toLong()) {
+                val b = remaining.div(m.b.mx)
 
                 return 3 * a + b
             }
