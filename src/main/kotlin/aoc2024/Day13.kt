@@ -8,22 +8,15 @@ class Day13 {
     data class Machine(val a: Button, val b: Button, val prize: Prize)
 }
 
-private fun String.toButton(): Button {
-    val values = this.substringAfter(": ").split(", ").map { it.substringAfter("+").toInt() }
+private fun String.toButton() =
+    this.substringAfter(": ").split(", ").map { it.substringAfter("+").toInt() }.let { Button(it[0], it[1]) }
 
-    return Button(values[0], values[1])
-}
-
-private fun String.toPrize(): Prize {
-    val values = this.substringAfter(": ").split(", ").map { it.substringAfter("=").toInt() }
-
-    return Prize(values[0], values[1])
-}
+private fun String.toPrize() =
+    this.substringAfter(": ").split(", ").map { it.substringAfter("=").toInt() }.let { Prize(it[0], it[1]) }
 
 fun main() {
-    fun parse(blocks: List<String>): List<Machine> {
-        return blocks.map { it.lines() }.map { l -> Machine(l[0].toButton(), l[1].toButton(), l[2].toPrize()) }
-    }
+    fun parse(blocks: List<String>) =
+        blocks.map { it.lines() }.map { l -> Machine(l[0].toButton(), l[1].toButton(), l[2].toPrize()) }
 
     fun evaluate(m: Machine, part2: Boolean): Long {
         // convert my math scribblings into code...
@@ -32,40 +25,30 @@ fun main() {
         val px = m.prize.px + modifier
         val py = m.prize.py + modifier
 
-        val max = m.a.mx
-        val mbx = m.b.mx
-        val may = m.a.my
-        val mby = m.b.my
-
-        val a = (px * mby - py * mbx).div(mby * max - mbx * may)
-        val remainder = (px * mby - py * mbx) % (mby * max - mbx * may)
+        val aDividend = (px * m.b.my - py * m.b.mx)
+        val aDivisor = (m.b.my * m.a.mx - m.b.mx * m.a.my)
 
         // make sure solution is integer
-        if (remainder == 0.toLong()) {
-            val b = (px * may - py * max).div(may * mbx - max * mby)
-            val bRem = (px * may - py * max) % (may * mbx - max * mby)
+        if (aDividend % aDivisor == 0.toLong()) {
+            val a = aDividend.div(aDivisor)
 
-            // curiously for part 2 still need to check if the B remainder is non-zero,
-            // not entirely sure why this is needed but hey it gives the right answer
-            if (a >= 0 && b >= 0 && bRem == 0.toLong()) {
-                val cost = 3 * a + b
-                return cost
+            val bDividend = (px * m.a.my - py * m.a.mx)
+            val bDivisor = (m.a.my * m.b.mx - m.a.mx * m.b.my)
+
+            if (bDividend % bDivisor == 0.toLong()) {
+                val b = bDividend.div(bDivisor)
+
+                return 3 * a + b
             }
         }
         return 0
     }
 
-    fun part1(input: List<String>): Long {
-        return parse(input).sumOf { evaluate(it, false) }
-    }
-
-    fun part2(input: List<String>): Long {
-        return parse(input).sumOf { evaluate(it, true) }
-    }
+    fun part1(input: List<String>) = parse(input).sumOf { evaluate(it, false) }
+    fun part2(input: List<String>) = parse(input).sumOf { evaluate(it, true) }
 
     val testInput = readAsBlocks("Day13_test")
     check(part1(testInput) == 480.toLong())
-    part2(testInput)
 
     val input = readAsBlocks("Day13")
     part1(input).println()
