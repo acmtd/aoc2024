@@ -1,6 +1,7 @@
 package aoc2024
 
 import aoc2024.Day13.*
+import kotlin.time.measureTime
 
 class Day13 {
     data class Button(val mx: Int, val my: Int)
@@ -33,8 +34,8 @@ fun main() {
             val a = aDividend.div(aDivisor)
 
             // don't need the full equation to find b,
-            // just plug the found a value into one
-            // equation and voilˆ
+            // just plug the calculated a-value into one
+            // equation and voilà
             val remaining = px - (a * m.a.mx)
 
             if (remaining % m.b.mx == 0.toLong()) {
@@ -53,6 +54,6 @@ fun main() {
     check(part1(testInput) == 480.toLong())
 
     val input = readAsBlocks("Day13")
-    part1(input).println()
-    part2(input).println()
+    measureTime { part1(input).println() }.also { it.println() }
+    measureTime { part2(input).println() }.also { it.println() }
 }
