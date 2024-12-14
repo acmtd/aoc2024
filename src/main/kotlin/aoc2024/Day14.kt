@@ -32,13 +32,11 @@ class Day14 {
         private fun cols() = 0..<dimensions.x
 
         fun map(robots: List<Robot>) {
-            for (y in lines()) {
-                mapLine(robots, y)
-            }
+            lines().forEach { mapLine(robots, it) }
         }
 
         private fun mapLine(robots: List<Robot>, y: Int) {
-            for (x in cols()) {
+            cols().forEach { x ->
                 val count = robots.filter { it.pos == Vec2(x, y) }.size
                 if (count == 0) {
                     print(".")
@@ -53,30 +51,16 @@ class Day14 {
             val top = 0..<(dimensions.y - 1) / 2
             val bottom = dimensions.y / 2 + 1..<dimensions.y
 
-            return listOf(
-                left to top,
-                left to bottom,
-                right to top,
-                right to bottom
-            )
+            return listOf(left to top, left to bottom, right to top, right to bottom)
         }
 
         fun quadrantCounts(robots: List<Robot>): List<Int> {
-            // each quadrant is defined by minx, max, miny, maxy
-            // i.e. for each quadrant there is an x-range and a y-range
-            return quadrants().map { (xRange, yRange) ->
-                robots.count { it.pos.x in xRange && it.pos.y in yRange }
-            }
+            return quadrants().map { (xRange, yRange) -> robots.count { it.pos.x in xRange && it.pos.y in yRange } }
         }
 
-        fun clusteringScore(robots: List<Robot>): Int {
-            // for each line that has robots on it, see how clustered the data is
-            val mapClusteringScore = lines().sumOf { y ->
-                robots.asSequence().filter { it.pos.y == y }.map { it.pos.x }.sorted().zipWithNext()
-                    .sumOf { it.second - it.first }
-            }
-
-            return mapClusteringScore
+        fun clusteringScore(robots: List<Robot>) = lines().sumOf { y ->
+            robots.asSequence().filter { it.pos.y == y }.map { it.pos.x }.sorted().zipWithNext()
+                .sumOf { it.second - it.first }
         }
     }
 }
