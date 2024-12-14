@@ -3,6 +3,8 @@ package aoc2024
 import aoc2024.Day14.*
 
 class Day14 {
+    data class Result(val seconds: Int, val map: String, val score: Int)
+
     data class Vec2(var x: Int, var y: Int) {
         companion object {
             fun fromString(s: String) = s.split(",").map { it.toInt() }.let { Vec2(it[0], it[1]) }
@@ -26,23 +28,23 @@ class Day14 {
         }
     }
 
-    @JvmInline
-    value class Space(val dimensions: Vec2) {
+    data class Space(val dimensions: Vec2) {
         private fun lines() = 0..<dimensions.y
         private fun cols() = 0..<dimensions.x
 
-        fun map(robots: List<Robot>) {
-            lines().forEach { mapLine(robots, it) }
+        fun map(robots: List<Robot>): String {
+            return lines().joinToString("\n") { mapLine(robots, it) }
         }
 
-        private fun mapLine(robots: List<Robot>, y: Int) {
-            cols().forEach { x ->
-                val count = robots.filter { it.pos == Vec2(x, y) }.size
-                if (count == 0) {
-                    print(".")
-                } else print(count)
+        private fun mapLine(robots: List<Robot>, y: Int): String {
+            return buildString {
+                cols().forEach { x ->
+                    val count = robots.filter { it.pos == Vec2(x, y) }.size
+                    if (count == 0) {
+                        append(".")
+                    } else append(count)
+                }
             }
-            println("")
         }
 
         private fun quadrants(): List<Pair<IntRange, IntRange>> {
@@ -81,26 +83,20 @@ fun main() {
         return space.quadrantCounts(robots).reduce(Int::times)
     }
 
-    fun part2(input: List<String>, space: Space): Int {
+    fun part2(input: List<String>, space: Space): Result {
         val robots = parse(input)
 
-        var iteration: Long = 0
-        var bestScore: Int = Int.MAX_VALUE
+        var best = Result(0, "", Int.MAX_VALUE)
 
-        // let this run until you see a tree, then exit and copy down the result
-        while (true) {
-            iteration++
+        (1..space.dimensions.x * space.dimensions.y).forEach { iteration ->
             robots.forEach { it.moveAndTeleport(space) }
 
-            val score = space.clusteringScore(robots)
-
-            if (score < bestScore) {
-                bestScore = score
-
-                println("iteration $iteration with score $score")
-                space.map(robots)
+            space.clusteringScore(robots).let { score ->
+                if (score < best.score) best = Result(iteration, space.map(robots), score)
             }
         }
+
+        return best
     }
 
     val testInput = readAsLines("Day14_test")
@@ -108,6 +104,9 @@ fun main() {
 
     val input = readAsLines("Day14")
     part1(input, Space(Vec2(101, 103))).println()
-    part2(input, Space(Vec2(101, 103)))
+    part2(input, Space(Vec2(101, 103))).apply {
+        println(this.map)
+        println(this.seconds)
+    }
 }
 
