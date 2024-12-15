@@ -38,6 +38,7 @@ class Day15 {
 
         private val maxX = items.map { it.pos }.maxOf { it.x }
         private val maxY = items.map { it.pos }.maxOf { it.y }
+        private val wallPositions = items.filter { !it.canMove() }.map { it.pos }
 
         private val robot = items.first { it is Robot }
 
@@ -50,9 +51,7 @@ class Day15 {
                 }
             }
 
-            if (newPositions.any {
-                    it in items.filter { item -> !item.canMove() }.map { wall -> wall.pos }
-                }) return emptySet()
+            if (newPositions.any { it in wallPositions }) return emptySet()
 
             val nextItems =
                 items.filter { it.canMove() && it != item && it.positions().any { p -> p in newPositions } }
@@ -69,9 +68,7 @@ class Day15 {
             moveableItems(dir, robot, setOf(robot)).forEach { item -> item.pos += dir }
         }
 
-        fun gps(): Int {
-            return items.filter { it is Box || it is BigBox }.sumOf { it.pos.y * 100 + it.pos.x }
-        }
+        fun gps() = items.filter { it is Box || it is BigBox }.sumOf { it.pos.y * 100 + it.pos.x }
 
         fun draw() {
             var lastWasBigBox = false
@@ -80,31 +77,19 @@ class Day15 {
 
             for (y in 0..maxY) {
                 for (x in 0..maxX) {
-                    val item = map[Vec2(x, y)]
-                    when (item) {
+                    when (map[Vec2(x, y)]) {
                         null -> {
-                            if (!lastWasBigBox) {
-                                print(".")
-                            }
+                            if (!lastWasBigBox) print(".")
                             lastWasBigBox = false
-
                         }
 
-                        is Wall -> {
-                            print("#")
-                        }
-
-                        is Box -> {
-                            print("O")
-                        }
+                        is Wall -> print("#")
+                        is Box -> print("O")
+                        is Robot -> print("@")
 
                         is BigBox -> {
                             print("[]")
                             lastWasBigBox = true
-                        }
-
-                        is Robot -> {
-                            print("@")
                         }
                     }
                 }
