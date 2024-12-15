@@ -43,14 +43,7 @@ class Day15 {
         private val robot = items.first { it is Robot }
 
         private fun moveableItems(dir: Vec2, item: Item, maybeMovable: Set<Item>): Set<Item> {
-            val newPositions = buildList {
-                if (item is BigBox) {
-                    addAll(item.positions().map { it + dir })
-                } else {
-                    add(item.pos + dir)
-                }
-            }
-
+            val newPositions = item.positions().map { it + dir }
             if (newPositions.any { it in wallPositions }) return emptySet()
 
             val nextItems =
