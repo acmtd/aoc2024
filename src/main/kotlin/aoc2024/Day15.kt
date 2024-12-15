@@ -3,14 +3,35 @@ package aoc2024
 import aoc2024.Day15.*
 
 class Day15 {
-    class Warehouse(val input: String) {
+    class Warehouse(val input: String, val part1: Boolean) {
         private val items = input.lines().mapIndexed { y, line ->
-            line.mapIndexedNotNull { x, char ->
+            line.flatMapIndexed { x, char ->
                 when (char) {
-                    'O' -> Box(Vec2(x, y))
-                    '#' -> Wall(Vec2(x, y))
-                    '@' -> Robot(Vec2(x, y))
-                    else -> null
+                    'O' -> {
+                        if (part1) {
+                            listOf(Box(Vec2(x, y)))
+                        } else {
+                            listOf(BigBox(Vec2(x * 2, y)))
+                        }
+                    }
+
+                    '#' -> {
+                        if (part1) {
+                            listOf(Wall(Vec2(x, y)))
+                        } else {
+                            listOf(Wall(Vec2(x * 2, y)), Wall(Vec2(x * 2 + 1, y)))
+                        }
+                    }
+
+                    '@' -> {
+                        if (part1) {
+                            listOf(Robot(Vec2(x, y)))
+                        } else {
+                            listOf(Robot(Vec2(x * 2, y)))
+                        }
+                    }
+
+                    else -> emptyList()
                 }
             }
         }.flatten()
@@ -19,50 +40,56 @@ class Day15 {
         private val maxY = items.map { it.pos }.maxOf { it.y }
 
         private val robot = items.first { it is Robot }
-        val map = items.associateBy { it.pos }.toMutableMap()
 
-        private fun moveableItems(pos: Vec2, dir: Vec2, maybeMovable: List<Item>): List<Item> {
-            val newPos = pos + dir
-
-            if (map.containsKey(newPos)) {
-                val nextItem = map[newPos]!!
-
-                // if we hit a wall, nothing is going anywhere
-                if (nextItem is Wall) return emptyList()
-
-                // if we hit a box, whether we can move the box depends on what's behind it
-                if (nextItem is Box) return moveableItems(newPos, dir, maybeMovable + nextItem)
+        private fun moveableItems(dir: Vec2, item: Item, maybeMovable: Set<Item>): Set<Item> {
+            val newPositions = buildList {
+                if (item is BigBox) {
+                    addAll(item.positions().map { it + dir })
+                } else {
+                    add(item.pos + dir)
+                }
             }
 
-            // otherwise the next spot is free space, so the item(s) identified so far can move, but nothing else
-            return maybeMovable
+            if (newPositions.any {
+                    it in items.filter { item -> !item.canMove() }.map { wall -> wall.pos }
+                }) return emptySet()
+
+            val nextItems =
+                items.filter { it.canMove() && it != item && it.positions().any { p -> p in newPositions } }
+
+            if (nextItems.isEmpty()) return maybeMovable
+
+            return nextItems.flatMap { next ->
+                val items = moveableItems(dir, next, maybeMovable + next)
+                items.ifEmpty { return emptySet() }
+            }.toSet()
         }
 
         fun makeMove(dir: Vec2) {
-            val initialPos = robot.pos
-
-            val moveableItems = moveableItems(initialPos, dir, listOf(robot))
-
-            if (moveableItems.isNotEmpty()) {
-                moveableItems.forEach { item ->
-                    item.pos += dir
-                    map[item.pos] = item
-                }
-
-                map.remove(initialPos)
-            }
+            moveableItems(dir, robot, setOf(robot)).forEach { item -> item.pos += dir }
         }
 
         fun gps(): Int {
-            return items.filterIsInstance<Box>().sumOf { it.pos.y * 100 + it.pos.x }
+            return items.filter { it is Box || it is BigBox }.sumOf { it.pos.y * 100 + it.pos.x }
         }
 
         fun draw() {
+            var lastWasBigBox = false
+
+            val map = items.associateBy { it.pos }
+
             for (y in 0..maxY) {
                 for (x in 0..maxX) {
                     val item = map[Vec2(x, y)]
                     when (item) {
-                        null -> print(".")
+                        null -> {
+                            if (!lastWasBigBox) {
+                                print(".")
+                            }
+                            lastWasBigBox = false
+
+                        }
+
                         is Wall -> {
                             print("#")
                         }
@@ -71,7 +98,12 @@ class Day15 {
                             print("O")
                         }
 
-                        else -> {
+                        is BigBox -> {
+                            print("[]")
+                            lastWasBigBox = true
+                        }
+
+                        is Robot -> {
                             print("@")
                         }
                     }
@@ -83,10 +115,16 @@ class Day15 {
 
     sealed class Item(var pos: Vec2) {
         abstract fun canMove(): Boolean
+        open fun positions() = listOf(pos)
     }
 
     class Box(pos: Vec2) : Item(pos) {
         override fun canMove() = true
+    }
+
+    class BigBox(pos: Vec2) : Item(pos) {
+        override fun canMove() = true
+        override fun positions() = listOf(pos, Vec2(pos.x + 1, pos.y))
     }
 
     class Wall(pos: Vec2) : Item(pos) {
@@ -112,24 +150,23 @@ class Day15 {
     }
 }
 
-fun moveList(input: String): List<Vec2> {
-    return input.mapNotNull { Vec2.move(it) }
-}
-
-fun part1(input: List<String>): Int {
-    val warehouse = Warehouse(input.first())
-    val moveList = moveList(input.last())
+fun run(input: List<String>, part1: Boolean): Int {
+    val warehouse = Warehouse(input.first(), part1)
+    val moveList = input.last().mapNotNull { Vec2.move(it) }
 
     moveList.forEach { warehouse.makeMove(it) }
 
+    println("END POSITION")
     warehouse.draw()
     return warehouse.gps()
 }
 
 fun main() {
     val testInput = readAsBlocks("Day15_test")
-    check(part1(testInput) == 10092)
+    check(run(testInput, true) == 10092)
+    check(run(testInput, false) == 9021)
 
     val input = readAsBlocks("Day15")
-    part1(input).println()
+    run(input, true).println()
+    run(input, false).println()
 }
