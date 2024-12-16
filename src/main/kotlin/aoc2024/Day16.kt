@@ -5,6 +5,7 @@ import aoc2024.Day16.Vec2.Companion.SOUTH
 import aoc2024.Day16.Vec2.Companion.WEST
 import aoc2024.Day16.Vec2.Companion.EAST
 import aoc2024.Day16.Vec2.Companion.NORTH
+import kotlin.time.measureTime
 
 class Day16 {
     data class State(val pos: Vec2, val facing: Vec2, val score: Long, val visited: List<Vec2>)
@@ -19,38 +20,28 @@ class Day16 {
             val minScoreMap = mutableMapOf<Pair<Vec2, Vec2>, Long>()
 
             var bestScore = Long.MAX_VALUE
-            val bestSittingPositions = mutableSetOf(start, end)
+            val bestSittingPositions = mutableSetOf<Vec2>()
 
             while (queue.isNotEmpty()) {
                 val state = queue.removeFirst()
 
-                if (state.visited.contains(state.pos)) {
-                    // we've circled back on ourselves so do not continue
-                } else {
+                if (!state.visited.contains(state.pos)) {
                     if (state.pos == end) {
-                        println("Found the end position, score is ${state.score}")
-
                         if (state.score <= bestScore) {
                             if (state.score < bestScore) {
                                 bestSittingPositions.clear()
-                                bestSittingPositions.add(start)
-                                bestSittingPositions.add(end)
+                                bestScore = state.score
                             }
 
-                            bestScore = state.score
                             bestSittingPositions += state.visited
                         }
                     } else {
-                        // do we already have a lower score at this position
-                        val lowestScoreToThisPosition =
-                            minScoreMap.getOrDefault(Pair(state.pos, state.facing), Long.MAX_VALUE)
+                        val lowScoreForPosDir = minScoreMap.getOrDefault(Pair(state.pos, state.facing), Long.MAX_VALUE)
 
-                        if (state.score <= lowestScoreToThisPosition) {
+                        if (state.score <= lowScoreForPosDir) {
                             minScoreMap[Pair(state.pos, state.facing)] = state.score
 
-                            val nextDirections = possibleDirections(state.pos)
-
-                            queue.addAll(nextDirections.map { dir ->
+                            queue.addAll(possibleDirections(state.pos).map { dir ->
                                 val newScore = if (dir == state.facing) 1 else 1001
 
                                 State(state.pos + dir, dir, state.score + newScore, state.visited + state.pos)
@@ -60,7 +51,7 @@ class Day16 {
                 }
             }
 
-            return Pair(bestScore, bestSittingPositions.size)
+            return Pair(bestScore, bestSittingPositions.size + 1)
         }
 
         private fun possibleDirections(pos: Vec2) = listOf(NORTH, SOUTH, WEST, EAST).filterNot { pos + it in walls }
@@ -111,7 +102,7 @@ fun main() {
     calculate(testInput2)
 
     val input = readAsLines("Day16")
-    calculate(input)
+    measureTime { calculate(input) }.also { it.println() } // 7 seconds
 }
 
 private fun calculate(input: List<String>) {
