@@ -72,10 +72,8 @@ class Day17 {
         }
     }
 
-    data class Result(val a: BigInteger, val b: BigInteger, val output: Int) {}
-
     data class Computer(var a: BigInteger, var b: BigInteger, var c: BigInteger, val program: List<Operation>) {
-        private val cache = mutableMapOf<Pair<BigInteger, BigInteger>, Result>()
+        private val cache = mutableMapOf<Pair<BigInteger, BigInteger>, Int>()
 
         companion object {
             fun fromInput(input: List<String>): Computer {
@@ -86,40 +84,20 @@ class Day17 {
             }
         }
 
-        private fun program(): List<Int> = program.flatMap { listOf(it.opcode, it.operand) }
+        private fun program() = program.flatMap { listOf(it.opcode, it.operand) }
 
-        fun run(): String {
-            val result = mutableListOf<Int>()
-
-            while (a > BigInteger.ZERO) {
-                program.forEach { operation ->
-                    val output = operation.execute(this)
-                    if (output != null) result.add(output)
-                }
-            }
-
-            return result.joinToString(",")
-        }
-
-        fun runWithCache(): String {
-            return buildList {
-                while (a > BigInteger.ZERO) {
-                    add(doCycle().output)
-                }
-            }.joinToString(",")
-        }
-
-        fun doCycle(): Result {
+        private fun doCycle(): Int {
             // take advantage of the fact that all the full programs
-            // have an output then a back-to-start as the last two instructions
+            // have an output then a back-to-start as the last two instructions,
+            // for shorter programs this doesn't work
             return cache.getOrPut(Pair(a, b)) {
-                val output = program.firstNotNullOf { op -> op.execute(this) }
-                Result(a, b, output)
+                program.firstNotNullOf { op -> op.execute(this) }
             }
         }
+
+        fun run() = buildList { while (a > BigInteger.ZERO) add(doCycle()) }.joinToString(",")
 
         fun runPart2(): BigInteger {
-            // in round 1 we should be trying all possible B values (0..7) with all A values that can reduce to zero, i.e also 0..7
             var possibleA = listOf(0).map { it.toBigInteger() }
 
             for (round in 1..this.program().size) {
@@ -143,12 +121,11 @@ class Day17 {
 
                             val result = buildList {
                                 repeat(round) {
-                                    add(computer.doCycle().output)
+                                    add(computer.doCycle())
                                 }
                             }
 
-                            val ok = (result == target)
-                            ok
+                            result == target
                         }
                 }
 
@@ -164,25 +141,12 @@ class Day17 {
     }
 }
 
-private fun part1Test() {
-    Computer.fromInput(readAsBlocks("Day17_test")).run().println()
-}
-
-private fun part1() {
-    measureTime { Computer.fromInput(readAsBlocks("Day17")).runWithCache().println() }.also { it.println() }
-}
-
-private fun part2Test() {
-    Computer.fromInput(readAsBlocks("Day17_test2")).runPart2().println()
-}
-
-private fun part2() {
-    measureTime { Computer.fromInput(readAsBlocks("Day17")).runPart2().println() }.also { it.println() }
-}
-
 fun main() {
-    part1Test()
-    part1()
-    part2Test()
-    part2()
+    // part 1
+    Computer.fromInput(readAsBlocks("Day17_test")).run().println()
+    measureTime { Computer.fromInput(readAsBlocks("Day17")).run().println() }.also { it.println() }
+
+    // part 2
+    Computer.fromInput(readAsBlocks("Day17_test2")).runPart2().println()
+    measureTime { Computer.fromInput(readAsBlocks("Day17")).runPart2().println() }.also { it.println() }
 }
