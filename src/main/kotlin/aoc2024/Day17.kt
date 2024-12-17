@@ -7,48 +7,20 @@ import kotlin.time.measureTime
 class Day17 {
     data class Operation(val opcode: Int, val operand: Int) {
         companion object {
-            fun fromValues(l: List<String>): Operation {
-                val opcode = l.first().toInt()
-                val operand = l.last().toInt()
-
-                return Operation(opcode, operand)
-            }
+            fun fromValues(l: List<String>) = Operation(l.first().toInt(), l.last().toInt())
         }
 
         fun execute(c: Computer): Int? {
             var output: Int? = null
 
             when (opcode) {
-                0 -> { // ADV
-                    c.a = dv(c, operand)
-                }
-
-                1 -> { // BXL
-                    c.b = c.b.xor(BigInteger.valueOf(operand.toLong()))
-                }
-
-                2 -> { // BST
-                    c.b = combo(operand, c).mod(BigInteger.valueOf(8))
-                }
-
-                3 -> { // JNZ: in all tests this just goes back to the start so no special coding
-                }
-
-                4 -> { // BXC (ignores operand)
-                    c.b = c.b.xor(c.c)
-                }
-
-                5 -> { // OUT
-                    output = (combo(operand, c).mod(BigInteger.valueOf(8))).toInt()
-                }
-
-                6 -> { // BDV
-                    c.b = dv(c, operand)
-                }
-
-                7 -> { // CDV
-                    c.c = dv(c, operand)
-                }
+                0 -> c.a = dv(c, operand)
+                1 -> c.b = c.b.xor(BigInteger.valueOf(operand.toLong()))
+                2 -> c.b = combo(operand, c).mod(BigInteger.valueOf(8))
+                4 -> c.b = c.b.xor(c.c)
+                5 -> output = (combo(operand, c).mod(BigInteger.valueOf(8))).toInt()
+                6 -> c.b = dv(c, operand)
+                7 -> c.c = dv(c, operand)
             }
 
             return output
@@ -56,9 +28,7 @@ class Day17 {
 
         private fun dv(c: Computer, o: Int): BigInteger {
             if (combo(o, c) == BigInteger.ZERO) return c.a
-
-            val denominator = BigInteger.TWO.pow(combo(o, c).toInt())
-            return c.a.divide(denominator)
+            return c.a.divide(BigInteger.TWO.pow(combo(o, c).toInt()))
         }
 
         private fun combo(operand: Int, c: Computer): BigInteger {
@@ -110,23 +80,12 @@ class Day17 {
                 val bValues = (0..7).map { it.toBigInteger() }
 
                 val matches = aValues.flatMap { pa ->
-                    bValues.map { pb -> Pair(pa, pb) }
-                        .filter {
-                            val computer = Computer(
-                                it.first,
-                                it.second,
-                                BigInteger.ZERO,
-                                program
-                            )
+                    bValues.map { pb -> Pair(pa, pb) }.filter {
+                        val computer = Computer(it.first, it.second, BigInteger.ZERO, program)
 
-                            val result = buildList {
-                                repeat(round) {
-                                    add(computer.doCycle())
-                                }
-                            }
-
-                            result == target
-                        }
+                        val result = buildList { repeat(round) { add(computer.doCycle()) } }
+                        result == target
+                    }
                 }
 
                 if (round < this.program().size) {
