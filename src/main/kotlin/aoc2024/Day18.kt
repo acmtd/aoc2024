@@ -1,6 +1,7 @@
 package aoc2024
 
 import aoc2024.Day18.*
+import kotlin.time.measureTime
 
 typealias Routing<T, U> = List<Pair<T, Map<T, U>>>
 
@@ -139,6 +140,6 @@ fun main() {
     check(simulatePart2(bytes(testInput), 7) == "6,1")
 
     val input = readAsLines("Day18")
-    simulate(bytes(input), 1024, 71).println()
-    simulatePart2(bytes(input), 71).println()
+    measureTime { simulate(bytes(input), 1024, 71).println() }.also { it.println() }  // 400 ms
+    measureTime { simulatePart2(bytes(input), 71).println() }.also { it.println() } // 1.5s
 }
