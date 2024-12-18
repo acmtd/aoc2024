@@ -73,43 +73,31 @@ fun <T> shortestPath(shortestPathTree: Map<T, T?>, start: T, end: T): List<T> {
 fun getRouting(nodes: List<Vec2>, bytes: List<Vec2>, gridSize: Int): Routing<Vec2, Vec2?> {
     val edges = buildMap {
         nodes.forEach { node ->
-            put(
-                node,
-                node.next().filter { it.inBounds(gridSize) && it !in bytes }.map { it }.toSet()
-            )
+            put(node, node.next().filter { it.inBounds(gridSize) && it !in bytes }.map { it }.toSet())
         }
     }
 
     val weights = buildMap {
-        edges.map { (nodeFrom, toSet) ->
-            toSet.map { nodeTo ->
-                put(Pair(nodeFrom, nodeTo), 1)
-            }
-        }
+        edges.map { (nodeFrom, toSet) -> toSet.map { nodeTo -> put(Pair(nodeFrom, nodeTo), 1) } }
     }
 
     return listOf(Vec2(0, 0)).map { it to dijkstra(Graph(nodes.toSet(), edges, weights), it) }
 }
 
-private fun buildNodeList(gridSize: Int, bytes: List<Vec2>): List<Vec2> {
-    return (0..<gridSize).flatMap { y -> (0..<gridSize).map { x -> Vec2(x, y) } }.filter { it !in bytes }
-}
+private fun buildNodeList(gridSize: Int, bytes: List<Vec2>) =
+    (0..<gridSize).flatMap { y -> (0..<gridSize).map { x -> Vec2(x, y) } }.filter { it !in bytes }
 
-fun routeTo(origin: Vec2, destination: Vec2, routing: Routing<Vec2, Vec2?>): List<Vec2> {
-    return shortestPath(routing.first { it.first == origin }.second, origin, destination)
-}
+fun routeTo(origin: Vec2, destination: Vec2, routing: Routing<Vec2, Vec2?>) =
+    shortestPath(routing.first { it.first == origin }.second, origin, destination)
 
-fun shortestRoute(nodeMap: List<Vec2>, bytes: List<Vec2>, start: Vec2, finish: Vec2, gridSize: Int): List<Vec2> {
-    return routeTo(start, finish, getRouting(nodeMap, bytes, gridSize))
-}
+fun shortestRoute(nodeMap: List<Vec2>, bytes: List<Vec2>, start: Vec2, finish: Vec2, gridSize: Int) =
+    routeTo(start, finish, getRouting(nodeMap, bytes, gridSize))
 
-fun minSteps(bytes: List<Vec2>, start: Vec2, finish: Vec2, gridSize: Int): Int {
-    return shortestRoute(buildNodeList(gridSize, bytes), bytes, start, finish, gridSize).size - 1
-}
+fun minSteps(bytes: List<Vec2>, start: Vec2, finish: Vec2, gridSize: Int) =
+    shortestRoute(buildNodeList(gridSize, bytes), bytes, start, finish, gridSize).size - 1
 
-fun simulate(bytes: List<Vec2>, seconds: Int = bytes.size, gridSize: Int): Int {
-    return minSteps(bytes.take(seconds), Vec2(0, 0), Vec2(gridSize - 1, gridSize - 1), gridSize)
-}
+fun simulate(bytes: List<Vec2>, seconds: Int = bytes.size, gridSize: Int) =
+    minSteps(bytes.take(seconds), Vec2(0, 0), Vec2(gridSize - 1, gridSize - 1), gridSize)
 
 fun simulatePart2(bytes: List<Vec2>, gridSize: Int): String {
     val start = Vec2(0, 0)
@@ -122,9 +110,7 @@ fun simulatePart2(bytes: List<Vec2>, gridSize: Int): String {
     while ((firstNotOk - lastOk) > 1) {
         val nextToTry = lastOk + ((firstNotOk - lastOk) / 2)
 
-        val canReach = canReach(bytes, nextToTry, gridSize, start, finish)
-
-        if (canReach) {
+        if (canReach(bytes, nextToTry, gridSize, start, finish)) {
             lastOk = nextToTry
         } else {
             firstNotOk = nextToTry
@@ -139,23 +125,13 @@ private fun canReach(bytes: List<Vec2>, sec: Int, gridSize: Int, start: Vec2, fi
     return (start in route && finish in route)
 }
 
-
-private fun drawGrid(gridSize: Int, bytes: List<Vec2>) {
-    (0..<gridSize).forEach { y ->
-        (0..<gridSize).forEach { x ->
-            if (bytes.any { it.x == x && it.y == y }) {
-                print("#")
-            } else {
-                print(".")
-            }
-        }
-        println("")
-    }
+private fun drawGrid(bytes: List<Vec2>, size: Int) {
+    (0..<size).joinToString("\n") { y ->
+        (0..<size).joinToString("") { x -> if (bytes.any { it.x == x && it.y == y }) "#" else "." }
+    }.println()
 }
 
-fun bytes(input: List<String>): List<Vec2> {
-    return input.map { line -> Vec2.fromString(line) }
-}
+fun bytes(input: List<String>) = input.map { line -> Vec2.fromString(line) }
 
 fun main() {
     val testInput = readAsLines("Day18_test")
@@ -163,6 +139,6 @@ fun main() {
     check(simulatePart2(bytes(testInput), 7) == "6,1")
 
     val input = readAsLines("Day18")
-    simulate(bytes(input), 1024, 71).println() // 234
-    simulatePart2(bytes(input), 71).println() // 58, 19
+    simulate(bytes(input), 1024, 71).println()
+    simulatePart2(bytes(input), 71).println()
 }
