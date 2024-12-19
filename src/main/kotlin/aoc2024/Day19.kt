@@ -17,9 +17,7 @@ fun main() {
 
                 towelCombos.getOrPut(Pair(design.length, remaining.length)) { mutableSetOf() }.apply { add(towel) }
 
-                if (remaining !in queue && remaining.isNotEmpty()) {
-                    queue.add(remaining)
-                }
+                if (remaining !in queue && remaining.isNotEmpty()) queue.add(remaining)
             }
         }
 
@@ -53,12 +51,9 @@ fun main() {
         val towels = towels(input)
         val designs = designs(input)
 
-        val result =
-            designs.count { design ->
-                design.combinations(towels.filter { design.contains(it) }).any { it.key.second == 0 }
-            }
-
-        return result
+        return designs.count { design ->
+            design.combinations(towels.filter { design.contains(it) }).any { it.key.second == 0 }
+        }
     }
 
     fun part2(input: List<String>): BigInteger {
