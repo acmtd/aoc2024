@@ -23,9 +23,7 @@ fun main() {
             }
         }
 
-        return buildMap {
-            towelCombos.forEach { (key, value) -> put(key, value.size.toBigInteger()) }
-        }.toMutableMap()
+        return towelCombos.mapValues { it.value.size.toBigInteger() }.toMutableMap()
     }
 
     tailrec fun waysToReach(combinations: MutableMap<Pair<Int, Int>, BigInteger>): BigInteger {
