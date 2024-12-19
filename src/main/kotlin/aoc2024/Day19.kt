@@ -14,7 +14,12 @@ fun main() {
 
         cache.clear()
 
-        return designs.count { design -> design.waysToMakeFromTowels(towels.filter { design.contains(it) }) > BigInteger.ZERO }
+        val result =
+            designs.count { design ->
+                design.combinations(towels.filter { design.contains(it) }).any { it.key.second == 0 }
+            }
+
+        return result
     }
 
     fun part2(input: List<String>): BigInteger {
@@ -23,10 +28,9 @@ fun main() {
 
         cache.clear()
 
-        val result =
-            designs.map { design -> design.waysToMakeFromTowels(towels.filter { design.contains(it) }) }
-
-        return result.sumOf { it }
+        return designs.map { design ->
+            waysToReach(design.combinations(towels.filter { design.contains(it) }))
+        }.sumOf { it }
     }
 
     val testInput = readAsBlocks("Day19_test")
@@ -35,30 +39,54 @@ fun main() {
 
     val input = readAsBlocks("Day19")
 
-    part1(input).println() // 360 is ok
-    part2(input).println() // 171805373 is too low, 7094486668417617499097789 is too high
+    part1(input).println() // 360
+    part2(input).println() // 577474410989846
 }
 
-private fun String.waysToMakeFromTowels(towels: List<String>): BigInteger {
+private fun String.combinations(towels: List<String>): MutableMap<Pair<Int, Int>, BigInteger> {
     val queue = ArrayDeque<String>()
     queue.add(this)
 
-    val combinations = mutableMapOf<String, BigInteger>()
-    combinations[this] = BigInteger.ONE
+    val longestTowel = towels.maxOf { it.length }
+
+    val towelCombos = mutableMapOf<Pair<Int, Int>, MutableSet<String>>()
 
     while (queue.isNotEmpty()) {
         val design = queue.removeFirst()
 
-        val possibleTowels = cache.getOrPut(design) { towels.filter { t -> design.startsWith(t) } }
+        val possibleTowels = cache.getOrPut(design.take(longestTowel)) { towels.filter { t -> design.startsWith(t) } }
 
         possibleTowels.forEach { towel ->
             val remaining = design.drop(towel.length)
-            combinations[remaining] = combinations.getOrDefault(remaining, BigInteger.ZERO).plus((combinations.getOrDefault(design, BigInteger.ZERO)))
 
-            if (remaining !in queue) queue.add(remaining)
+            val fromTo = Pair(design.length, remaining.length)
+            towelCombos[fromTo] = towelCombos.getOrDefault(fromTo, mutableSetOf()).apply { add(towel) }
+
+            if (remaining !in queue && remaining.isNotEmpty()) queue.add(remaining)
         }
     }
 
-    val result = combinations.getOrDefault("", BigInteger.ZERO)
-    return result
+    return buildMap {
+        towelCombos.forEach { (key, value) -> put(key, BigInteger.valueOf(value.size.toLong())) }
+    }.toMutableMap()
+}
+
+tailrec fun waysToReach(combinations: MutableMap<Pair<Int, Int>, BigInteger>): BigInteger {
+    if (combinations.isEmpty()) return BigInteger.ZERO
+
+    val highestValue = combinations.keys.maxOf { it.second }
+
+    if (highestValue == 0) {
+        return combinations.map { it.value }.sumOf { it }
+    } else {
+        val entriesToRemove = combinations.filterKeys { it.second == highestValue }
+        val entriesToMultiply = combinations.filter { it.key.first == highestValue }
+
+        val multiplier = entriesToRemove.map { it.value }.sumOf { it }
+
+        entriesToRemove.keys.forEach { combinations.remove(it) }
+        entriesToMultiply.keys.forEach { combinations[it] = combinations[it]!! * multiplier }
+
+        return waysToReach(combinations)
+    }
 }
