@@ -4,27 +4,18 @@ import java.math.BigInteger
 import kotlin.time.measureTime
 
 fun main() {
-    val cache = mutableMapOf<String, List<String>>()
-
     fun String.combinations(towels: List<String>): MutableMap<Pair<Int, Int>, BigInteger> {
-        val queue = ArrayDeque<String>()
-        queue.add(this)
-
-        val longestTowel = towels.maxOf { it.length }
+        val queue = ArrayDeque<String>().apply { add(this@combinations) }
 
         val towelCombos = mutableMapOf<Pair<Int, Int>, MutableSet<String>>()
 
         while (queue.isNotEmpty()) {
             val design = queue.removeFirst()
 
-            val possibleTowels =
-                cache.getOrPut(design.take(longestTowel)) { towels.filter { t -> design.startsWith(t) } }
-
-            possibleTowels.forEach { towel ->
+            towels.filter { t -> design.startsWith(t) }.forEach { towel ->
                 val remaining = design.drop(towel.length)
 
-                val fromTo = Pair(design.length, remaining.length)
-                towelCombos[fromTo] = towelCombos.getOrDefault(fromTo, mutableSetOf()).apply { add(towel) }
+                towelCombos.getOrPut(Pair(design.length, remaining.length)) { mutableSetOf() }.apply { add(towel) }
 
                 if (remaining !in queue && remaining.isNotEmpty()) {
                     queue.add(remaining)
@@ -33,7 +24,7 @@ fun main() {
         }
 
         return buildMap {
-            towelCombos.forEach { (key, value) -> put(key, BigInteger.valueOf(value.size.toLong())) }
+            towelCombos.forEach { (key, value) -> put(key, value.size.toBigInteger()) }
         }.toMutableMap()
     }
 
@@ -64,8 +55,6 @@ fun main() {
         val towels = towels(input)
         val designs = designs(input)
 
-        cache.clear()
-
         val result =
             designs.count { design ->
                 design.combinations(towels.filter { design.contains(it) }).any { it.key.second == 0 }
@@ -78,8 +67,6 @@ fun main() {
         val towels = towels(input)
         val designs = designs(input)
 
-        cache.clear()
-
         return designs.map { design ->
             waysToReach(design.combinations(towels.filter { design.contains(it) }))
         }.sumOf { it }
@@ -91,7 +78,7 @@ fun main() {
 
     val input = readAsBlocks("Day19")
 
-    // timings are in the 150-250ms range
+    // timings are in the 200-250ms range
     measureTime { part1(input).println() }.also { it.println() }
     measureTime { part2(input).println() }.also { it.println() }
 }
