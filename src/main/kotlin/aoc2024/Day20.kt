@@ -1,7 +1,6 @@
 package aoc2024
 
 import aoc2024.Day20.*
-import kotlinx.coroutines.*
 import kotlin.math.abs
 import kotlin.time.measureTime
 
@@ -123,20 +122,17 @@ fun main() {
     fun part1(input: List<String>, threshold: Int): Int {
         val maze = Maze.fromInput(input)
 
-        return runBlocking(Dispatchers.Default) {
-            maze.viableCheats()
-                .map { async { maze.cheatSavings(it) } }
-                .awaitAll()
-        }.count { it >= threshold }
+        return maze.viableCheats()
+            .map { maze.cheatSavings(it) }
+            .count { it >= threshold }
     }
 
     fun part2(input: List<String>, threshold: Int): Int {
         val maze = Maze.fromInput(input)
 
-        val path = maze.path
-        val pairs = path.indices.flatMap { start ->
-            (start..<path.size).filter { end ->
-                val taxiCabDistance = path[start].distance(path[end])
+        return maze.path.indices.sumOf { start ->
+            (start..<maze.path.size).count { end ->
+                val taxiCabDistance = maze.path[start].distance(maze.path[end])
 
                 if (taxiCabDistance > 20) {
                     false
@@ -146,10 +142,8 @@ fun main() {
                     val savings = (trackDistance - taxiCabDistance)
                     savings >= threshold
                 }
-            }.map { end -> Pair(start, end) }
+            }
         }
-
-        return pairs.distinct().size
     }
 
     val testInput = readAsLines("Day20_test")
