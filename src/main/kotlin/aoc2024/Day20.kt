@@ -17,12 +17,11 @@ class Day20 {
             edges.map { (nodeFrom, toSet) -> toSet.map { nodeTo -> put(Pair(nodeFrom, nodeTo), 1) } }
         }
 
-        private val graph = Graph(racetrack.toSet(), edges, weights)
-        private val route = dijkstra(graph, start)
+        private val route = dijkstra(Graph(racetrack.toSet(), edges, weights), start)
 
-        fun shortestRoute(p1: Vec2 = start, p2: Vec2 = end) = shortestPath(p1, p2, route)
+        fun path(p1: Vec2 = start, p2: Vec2 = end) = findPath(p1, p2, route)
 
-        private fun <T> shortestPath(startNode: T, endNode: T, route: Map<T, T?>): List<T> {
+        private fun <T> findPath(startNode: T, endNode: T, route: Map<T, T?>): List<T> {
             var node = endNode
 
             return buildList {
@@ -91,15 +90,18 @@ class Day20 {
         operator fun plus(delta: Vec2) = Vec2(x + delta.x, y + delta.y)
 
         fun next() = listOf(this + Vec2(0, 1), this + Vec2(0, -1), this + Vec2(1, 0), this + Vec2(-1, 0))
-        fun left() = Vec2(x - 1, y)
-        fun right() = Vec2(x + 1, y)
-        fun up() = Vec2(x, y - 1)
-        fun down() = Vec2(x, y + 1)
+        private fun left() = Vec2(x - 1, y)
+        private fun right() = Vec2(x + 1, y)
+        private fun up() = Vec2(x, y - 1)
+        private fun down() = Vec2(x, y + 1)
 
         fun inBounds(gridSize: Int) = (x >= 0 && y >= 0 && x < gridSize && y < gridSize)
         fun isBorder(gridSize: Int) = (x == 0 || y == 0 || x == gridSize - 1 || y == gridSize - 1)
         fun hasHorizontalNeighbours(others: List<Vec2>) = others.any { it == left() || it == right() }
         fun hasVerticalNeighbours(others: List<Vec2>) = others.any { it == up() || it == down() }
+
+        fun eitherSide(maze: Maze) =
+            if (hasHorizontalNeighbours(maze.walls)) listOf(up(), down()) else listOf(left(), right())
     }
 
     data class Graph<Vec2>(
@@ -112,22 +114,14 @@ class Day20 {
 fun main() {
     fun part1(input: List<String>, threshold: Int): Int {
         val maze = Maze.fromInput(input)
-        val originalPath = maze.shortestRoute()
+        val originalPath = maze.path()
         val savingsMap = mutableMapOf<Int, Int>()
 
-        maze.walls.filter { wall -> !wall.isBorder(maze.gridSize) }
-            .filterNot { wall -> wall.hasHorizontalNeighbours(maze.walls) && wall.hasVerticalNeighbours(maze.walls) }
+        maze.walls.filter { !it.isBorder(maze.gridSize) }
+            .filterNot { it.hasHorizontalNeighbours(maze.walls) && it.hasVerticalNeighbours(maze.walls) }
             .forEach { wall ->
-                buildList {
-                    if (wall.hasHorizontalNeighbours(maze.walls)) {
-                        add(wall.up())
-                        add(wall.down())
-                    }
-                    if (wall.hasVerticalNeighbours(maze.walls)) {
-                        add(wall.left())
-                        add(wall.right())
-                    }
-                }.filter { it in maze.racetrack }
+                wall.eitherSide(maze)
+                    .filter { it in maze.racetrack }
                     .map { originalPath.indexOf(it) }.reduce { a, b -> abs(a - b) - 2 }
                     .let { savingsMap[it] = savingsMap.getOrDefault(it, 0) + 1 }
             }
