@@ -8,6 +8,10 @@ sourceSets {
     }
 }
 
+dependencies {
+    implementation( "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.0")
+}
+
 tasks {
     wrapper {
         gradleVersion = "8.11.1"

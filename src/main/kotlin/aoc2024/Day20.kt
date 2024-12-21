@@ -1,7 +1,9 @@
 package aoc2024
 
 import aoc2024.Day20.*
+import kotlinx.coroutines.*
 import kotlin.math.abs
+import kotlin.time.measureTime
 
 class Day20 {
     data class Maze(val walls: List<Vec2>, val start: Vec2, val end: Vec2, val gridSize: Int) {
@@ -18,8 +20,7 @@ class Day20 {
         }
 
         private val route = dijkstra(Graph(racetrack.toSet(), edges, weights), start)
-
-        fun path(p1: Vec2 = start, p2: Vec2 = end) = findPath(p1, p2, route)
+        val path = findPath(start, end, route)
 
         private fun <T> findPath(startNode: T, endNode: T, route: Map<T, T?>): List<T> {
             var node = endNode
@@ -62,6 +63,13 @@ class Day20 {
 
             return previous.toMap()
         }
+
+        fun cheatSavings(wall: Vec2) =
+            wall.eitherSide(this).filter { it in racetrack }.map { path.indexOf(it) }.reduce { a, b -> abs(a - b) - 2 }
+
+        fun viableCheats() =
+            walls.filter { !it.isBorder(gridSize) }
+                .filterNot { it.hasHorizontalNeighbours(walls) && it.hasVerticalNeighbours(walls) }
 
         companion object {
             fun fromInput(input: List<String>): Maze {
@@ -114,25 +122,17 @@ class Day20 {
 fun main() {
     fun part1(input: List<String>, threshold: Int): Int {
         val maze = Maze.fromInput(input)
-        val originalPath = maze.path()
-        val savingsMap = mutableMapOf<Int, Int>()
 
-        maze.walls.filter { !it.isBorder(maze.gridSize) }
-            .filterNot { it.hasHorizontalNeighbours(maze.walls) && it.hasVerticalNeighbours(maze.walls) }
-            .forEach { wall ->
-                wall.eitherSide(maze)
-                    .filter { it in maze.racetrack }
-                    .map { originalPath.indexOf(it) }.reduce { a, b -> abs(a - b) - 2 }
-                    .let { savingsMap[it] = savingsMap.getOrDefault(it, 0) + 1 }
-            }
-
-        return savingsMap.filter { it.key >= threshold }.map { it.value }.sum()
+        return runBlocking(Dispatchers.Default) {
+            maze.viableCheats()
+                .map { async { maze.cheatSavings(it) } }
+                .awaitAll()
+        }.count { it >= threshold }
     }
 
     val testInput = readAsLines("Day20_test")
     check(part1(testInput, 2) == 44)
 
     val input = readAsLines("Day20")
-    part1(input, 100).println() // 1463
+    measureTime { part1(input, 100).println() }.also { it.println() } // 1463
 }
-
