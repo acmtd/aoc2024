@@ -117,10 +117,6 @@ class Day20 {
         val edges: Map<Vec2, Set<Vec2>>,
         val weights: Map<Pair<Vec2, Vec2>, Int>
     )
-
-    data class D20State(val pos: Vec2, val timeLeft: Int) {}
-
-    data class Cheat(val points: Set<Vec2>, val timeTaken: Int, val timeSaved: Int)
 }
 
 fun main() {
@@ -132,46 +128,6 @@ fun main() {
                 .map { async { maze.cheatSavings(it) } }
                 .awaitAll()
         }.count { it >= threshold }
-    }
-
-    fun possibleCheat(path: List<Vec2>, startIdx: Int, endIdx: Int, maze: Maze, threshold: Int): Cheat? {
-        val queue = ArrayDeque<Pair<Vec2, Int>>()
-
-        val startPos = path[startIdx]
-        val endPos = path[endIdx]
-
-        queue.add(Pair(startPos, 0))
-
-        val visited = mutableSetOf<Vec2>()
-
-        while (!queue.isEmpty()) {
-            val (pos, timeTaken) = queue.removeFirst()
-
-            visited.add(pos)
-
-            if (pos in visited) {
-                val timeLeft = 20 - timeTaken
-
-                if (pos.distance(endPos) < timeLeft) {
-                    val nextOptions = pos.next()
-                        .filter { it == endPos || it in maze.walls }
-                        .filter { it !in visited }
-
-                    if (endPos in nextOptions) {
-                        val newPathLength = startIdx + timeTaken + (path.size - endIdx) + 1
-                        val savings = path.size - newPathLength
-
-                        if (savings >= threshold) {
-                            return Cheat(setOf(startPos, endPos), timeTaken, savings)
-                        }
-                    }
-
-                    queue.addAll(nextOptions.map { Pair(it, timeTaken + 1) })
-                }
-            }
-        }
-
-        return null
     }
 
     fun part2(input: List<String>, threshold: Int): Int {
