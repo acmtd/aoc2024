@@ -17,37 +17,22 @@ class Day20 {
         }
 
         private val graph = Graph(racetrack.toSet(), edges, weights)
+        private val route = dijkstra(graph, start)
 
-        private val routing = listOf(start).map { it to dijkstra(graph, it) }
+        fun shortestRoute(p1: Vec2 = start, p2: Vec2 = end) = shortestPath(p1, p2, route)
 
-        companion object {
-            fun fromInput(input: List<String>): Maze {
-                var start: Vec2? = null
-                var end: Vec2? = null
-                val walls = mutableListOf<Vec2>()
+        private fun <T> shortestPath(startNode: T, endNode: T, route: Map<T, T?>): List<T> {
+            var node = endNode
 
-                val gridSize = input.size
-
-                input.indices.forEach { y ->
-                    input.indices.forEach { x ->
-                        when (input[y][x]) {
-                            'S' -> start = Vec2(x, y)
-                            'E' -> end = Vec2(x, y)
-                            '#' -> walls.add(Vec2(x, y))
-                        }
-                    }
+            return buildList {
+                while (route[node] != null && node != startNode) {
+                    add(node)
+                    node = route[node]!!
                 }
 
-                return Maze(walls, start!!, end!!, gridSize)
+                add(node)
             }
         }
-
-        fun shortestRoute() = shortestRoute(start, end)
-
-        fun shortestRoute(p1: Vec2, p2: Vec2) = routeTo(p1, p2, routing)
-
-        private fun routeTo(origin: Vec2, destination: Vec2, routing: Routing<Vec2, Vec2?>) =
-            shortestPath(routing.first { it.first == start }.second, origin, destination)
 
         private fun dijkstra(graph: Graph<Vec2>, start: Vec2): Map<Vec2, Vec2?> {
             val set: MutableSet<Vec2> = mutableSetOf()
@@ -78,16 +63,25 @@ class Day20 {
             return previous.toMap()
         }
 
-        fun <T> shortestPath(shortestPathTree: Map<T, T?>, startNode: T, endNode: T): List<T> {
-            var node = endNode
+        companion object {
+            fun fromInput(input: List<String>): Maze {
+                var start: Vec2? = null
+                var end: Vec2? = null
+                val walls = mutableListOf<Vec2>()
 
-            return buildList {
-                while (shortestPathTree[node] != null && node != startNode) {
-                    add(node)
-                    node = shortestPathTree[node]!!
+                val gridSize = input.size
+
+                input.indices.forEach { y ->
+                    input.indices.forEach { x ->
+                        when (input[y][x]) {
+                            'S' -> start = Vec2(x, y)
+                            'E' -> end = Vec2(x, y)
+                            '#' -> walls.add(Vec2(x, y))
+                        }
+                    }
                 }
 
-                add(node)
+                return Maze(walls, start!!, end!!, gridSize)
             }
         }
     }
@@ -95,43 +89,16 @@ class Day20 {
     data class Vec2(var x: Int, var y: Int) {
         operator fun plus(delta: Vec2) = Vec2(x + delta.x, y + delta.y)
 
-        fun next(): List<Vec2> {
-            return listOf(
-                this + Vec2(0, 1),
-                this + Vec2(0, -1),
-                this + Vec2(1, 0),
-                this + Vec2(-1, 0)
-            )
-        }
-
-        fun left(): Vec2 {
-            return Vec2(x - 1, y)
-        }
-
-        fun right(): Vec2 {
-            return Vec2(x + 1, y)
-        }
-
-        fun up(): Vec2 {
-            return Vec2(x, y - 1)
-        }
-
-        fun down(): Vec2 {
-            return Vec2(x, y + 1)
-        }
+        fun next() = listOf(this + Vec2(0, 1), this + Vec2(0, -1), this + Vec2(1, 0), this + Vec2(-1, 0))
+        fun left() = Vec2(x - 1, y)
+        fun right() = Vec2(x + 1, y)
+        fun up() = Vec2(x, y - 1)
+        fun down() = Vec2(x, y + 1)
 
         fun inBounds(gridSize: Int) = (x >= 0 && y >= 0 && x < gridSize && y < gridSize)
-        fun isBorder(gridSize: Int): Boolean {
-            return (x == 0 || y == 0 || x == gridSize - 1 || y == gridSize - 1)
-        }
-
-        fun hasHorizontalNeighbours(others: List<Vec2>): Boolean {
-            return others.any { it == left() || it == right() }
-        }
-
-        fun hasVerticalNeighbours(others: List<Vec2>): Boolean {
-            return others.any { it == up() || it == down() }
-        }
+        fun isBorder(gridSize: Int) = (x == 0 || y == 0 || x == gridSize - 1 || y == gridSize - 1)
+        fun hasHorizontalNeighbours(others: List<Vec2>) = others.any { it == left() || it == right() }
+        fun hasVerticalNeighbours(others: List<Vec2>) = others.any { it == up() || it == down() }
     }
 
     data class Graph<Vec2>(
@@ -153,10 +120,7 @@ fun main() {
 
         val savingsMap = mutableMapOf<Int, Int>()
 
-        var count = 0
         possibleCheats.forEach { wallToRemove ->
-            count++
-
             val beforeAndAfter = buildList {
                 if (wallToRemove.hasHorizontalNeighbours(maze.walls)) {
                     add(wallToRemove.up())
@@ -168,9 +132,7 @@ fun main() {
                 }
             }.filter { it in maze.racetrack }
 
-            val routeToWall = beforeAndAfter.map {
-                it to maze.shortestRoute(maze.start, it)
-            }.minBy { it.second.size }
+            val routeToWall = beforeAndAfter.map { it to maze.shortestRoute(maze.start, it) }.minBy { it.second.size }
 
             val otherSide = beforeAndAfter.first { it != routeToWall.first }
             val routeFromWall = maze.shortestRoute(otherSide, maze.end)
