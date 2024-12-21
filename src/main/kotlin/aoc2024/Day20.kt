@@ -112,29 +112,25 @@ class Day20 {
 fun main() {
     fun part1(input: List<String>, threshold: Int): Int {
         val maze = Maze.fromInput(input)
-
         val originalPath = maze.shortestRoute()
-
-        val possibleCheats = maze.walls
-            .filter { wall -> !wall.isBorder(maze.gridSize) }
-            .filterNot { wall -> wall.hasHorizontalNeighbours(maze.walls) && wall.hasVerticalNeighbours(maze.walls) }
-
         val savingsMap = mutableMapOf<Int, Int>()
 
-        possibleCheats.forEach { wall ->
-            buildList {
-                if (wall.hasHorizontalNeighbours(maze.walls)) {
-                    add(wall.up())
-                    add(wall.down())
-                }
-                if (wall.hasVerticalNeighbours(maze.walls)) {
-                    add(wall.left())
-                    add(wall.right())
-                }
-            }.filter { it in maze.racetrack }
-                .map { originalPath.indexOf(it) }.reduce { a, b -> abs(a - b) - 2 }
-                .let { savingsMap[it] = savingsMap.getOrDefault(it, 0) + 1 }
-        }
+        maze.walls.filter { wall -> !wall.isBorder(maze.gridSize) }
+            .filterNot { wall -> wall.hasHorizontalNeighbours(maze.walls) && wall.hasVerticalNeighbours(maze.walls) }
+            .forEach { wall ->
+                buildList {
+                    if (wall.hasHorizontalNeighbours(maze.walls)) {
+                        add(wall.up())
+                        add(wall.down())
+                    }
+                    if (wall.hasVerticalNeighbours(maze.walls)) {
+                        add(wall.left())
+                        add(wall.right())
+                    }
+                }.filter { it in maze.racetrack }
+                    .map { originalPath.indexOf(it) }.reduce { a, b -> abs(a - b) - 2 }
+                    .let { savingsMap[it] = savingsMap.getOrDefault(it, 0) + 1 }
+            }
 
         return savingsMap.filter { it.key >= threshold }.map { it.value }.sum()
     }
