@@ -119,22 +119,14 @@ class Day20 {
 }
 
 fun main() {
-    fun part1(input: List<String>, threshold: Int): Int {
-        val maze = Maze.fromInput(input)
-
-        return maze.viableCheats()
-            .map { maze.cheatSavings(it) }
-            .count { it >= threshold }
-    }
-
-    fun part2(input: List<String>, threshold: Int): Int {
+    fun solve(input: List<String>, threshold: Int, maxCheat: Int): Int {
         val maze = Maze.fromInput(input)
 
         return maze.path.indices.sumOf { start ->
             (start..<maze.path.size).count { end ->
                 val taxiCabDistance = maze.path[start].distance(maze.path[end])
 
-                if (taxiCabDistance > 20) {
+                if (taxiCabDistance > maxCheat) {
                     false
                 } else {
                     val trackDistance = (end - start)
@@ -146,11 +138,29 @@ fun main() {
         }
     }
 
+    fun part1(input: List<String>, threshold: Int): Int {
+        val maze = Maze.fromInput(input)
+
+        return maze.viableCheats()
+            .map { maze.cheatSavings(it) }
+            .count { it >= threshold }
+    }
+
+    fun part1UsingGeneralSolve(input: List<String>, threshold: Int): Int {
+        return solve(input, threshold, 2)
+    }
+
+    fun part2(input: List<String>, threshold: Int): Int {
+        return solve(input, threshold, 20)
+    }
+
     val testInput = readAsLines("Day20_test")
     check(part1(testInput, 2) == 44)
+    check(part1UsingGeneralSolve(testInput, 2) == 44)
     check(part2(testInput, 50) == 285)
 
     val input = readAsLines("Day20")
     measureTime { part1(input, 100).println() }.also { it.println() }
+    measureTime { part1UsingGeneralSolve(input, 100).println() }.also { it.println() }
     measureTime { part2(input, 100).println() }.also { it.println() }
 }
