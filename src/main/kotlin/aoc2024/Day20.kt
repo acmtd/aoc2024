@@ -1,6 +1,7 @@
 package aoc2024
 
 import aoc2024.Day20.*
+import kotlin.math.abs
 
 class Day20 {
     data class Maze(val walls: List<Vec2>, val start: Vec2, val end: Vec2, val gridSize: Int) {
@@ -120,29 +121,19 @@ fun main() {
 
         val savingsMap = mutableMapOf<Int, Int>()
 
-        possibleCheats.forEach { wallToRemove ->
-            val beforeAndAfter = buildList {
-                if (wallToRemove.hasHorizontalNeighbours(maze.walls)) {
-                    add(wallToRemove.up())
-                    add(wallToRemove.down())
+        possibleCheats.forEach { wall ->
+            buildList {
+                if (wall.hasHorizontalNeighbours(maze.walls)) {
+                    add(wall.up())
+                    add(wall.down())
                 }
-                if (wallToRemove.hasVerticalNeighbours(maze.walls)) {
-                    add(wallToRemove.left())
-                    add(wallToRemove.right())
+                if (wall.hasVerticalNeighbours(maze.walls)) {
+                    add(wall.left())
+                    add(wall.right())
                 }
             }.filter { it in maze.racetrack }
-
-            val routeToWall = beforeAndAfter.map { it to maze.shortestRoute(maze.start, it) }.minBy { it.second.size }
-
-            val otherSide = beforeAndAfter.first { it != routeToWall.first }
-            val routeFromWall = maze.shortestRoute(otherSide, maze.end)
-            val newPathLength = routeToWall.second.size + routeFromWall.size + 1
-
-            val savings = originalPath.size - newPathLength
-
-            if (savings >= threshold) {
-                savingsMap[savings] = savingsMap.getOrDefault(savings, 0) + 1
-            }
+                .map { originalPath.indexOf(it) }.reduce { a, b -> abs(a - b) - 2 }
+                .let { savingsMap[it] = savingsMap.getOrDefault(it, 0) + 1 }
         }
 
         return savingsMap.filter { it.key >= threshold }.map { it.value }.sum()
