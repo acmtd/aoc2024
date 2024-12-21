@@ -7,7 +7,8 @@ import kotlin.time.measureTime
 
 class Day20 {
     data class Maze(val walls: List<Vec2>, val start: Vec2, val end: Vec2, val gridSize: Int) {
-        val racetrack = (0..<gridSize).flatMap { y -> (0..<gridSize).map { x -> Vec2(x, y) } }.filter { it !in walls }
+        private val racetrack =
+            (0..<gridSize).flatMap { y -> (0..<gridSize).map { x -> Vec2(x, y) } }.filter { it !in walls }
 
         private val edges = buildMap {
             racetrack.forEach { node ->
@@ -15,12 +16,10 @@ class Day20 {
             }
         }
 
-        private val weights = buildMap {
-            edges.map { (nodeFrom, toSet) -> toSet.map { nodeTo -> put(Pair(nodeFrom, nodeTo), 1) } }
-        }
+        private val weights =
+            buildMap { edges.map { (nodeFrom, toSet) -> toSet.map { nodeTo -> put(Pair(nodeFrom, nodeTo), 1) } } }
 
-        private val route = dijkstra(Graph(racetrack.toSet(), edges, weights), start)
-        val path = findPath(start, end, route)
+        val path = findPath(start, end, dijkstra(Graph(racetrack.toSet(), edges, weights), start))
 
         private fun <T> findPath(startNode: T, endNode: T, route: Map<T, T?>): List<T> {
             var node = endNode
@@ -108,6 +107,7 @@ class Day20 {
         fun hasHorizontalNeighbours(others: List<Vec2>) = others.any { it == left() || it == right() }
         fun hasVerticalNeighbours(others: List<Vec2>) = others.any { it == up() || it == down() }
 
+        fun distance(other: Vec2) = abs(other.x - x) + abs(other.y - y)
         fun eitherSide(maze: Maze) =
             if (hasHorizontalNeighbours(maze.walls)) listOf(up(), down()) else listOf(left(), right())
     }
@@ -117,6 +117,10 @@ class Day20 {
         val edges: Map<Vec2, Set<Vec2>>,
         val weights: Map<Pair<Vec2, Vec2>, Int>
     )
+
+    data class D20State(val pos: Vec2, val timeLeft: Int) {}
+
+    data class Cheat(val points: Set<Vec2>, val timeTaken: Int, val timeSaved: Int)
 }
 
 fun main() {
@@ -130,9 +134,73 @@ fun main() {
         }.count { it >= threshold }
     }
 
+    fun possibleCheat(path: List<Vec2>, startIdx: Int, endIdx: Int, maze: Maze, threshold: Int): Cheat? {
+        val queue = ArrayDeque<Pair<Vec2, Int>>()
+
+        val startPos = path[startIdx]
+        val endPos = path[endIdx]
+
+        queue.add(Pair(startPos, 0))
+
+        val visited = mutableSetOf<Vec2>()
+
+        while (!queue.isEmpty()) {
+            val (pos, timeTaken) = queue.removeFirst()
+
+            visited.add(pos)
+
+            if (pos in visited) {
+                val timeLeft = 20 - timeTaken
+
+                if (pos.distance(endPos) < timeLeft) {
+                    val nextOptions = pos.next()
+                        .filter { it == endPos || it in maze.walls }
+                        .filter { it !in visited }
+
+                    if (endPos in nextOptions) {
+                        val newPathLength = startIdx + timeTaken + (path.size - endIdx) + 1
+                        val savings = path.size - newPathLength
+
+                        if (savings >= threshold) {
+                            return Cheat(setOf(startPos, endPos), timeTaken, savings)
+                        }
+                    }
+
+                    queue.addAll(nextOptions.map { Pair(it, timeTaken + 1) })
+                }
+            }
+        }
+
+        return null
+    }
+
+    fun part2(input: List<String>, threshold: Int): Int {
+        val maze = Maze.fromInput(input)
+
+        val path = maze.path
+        val pairs = path.indices.flatMap { start ->
+            (start..<path.size).filter { end ->
+                val taxiCabDistance = path[start].distance(path[end])
+
+                if (taxiCabDistance > 20) {
+                    false
+                } else {
+                    val trackDistance = (end - start)
+
+                    val savings = (trackDistance - taxiCabDistance)
+                    savings >= threshold
+                }
+            }.map { end -> Pair(start, end) }
+        }
+
+        return pairs.distinct().size
+    }
+
     val testInput = readAsLines("Day20_test")
     check(part1(testInput, 2) == 44)
+    check(part2(testInput, 50) == 285)
 
     val input = readAsLines("Day20")
-    measureTime { part1(input, 100).println() }.also { it.println() } // 1463
+    measureTime { part1(input, 100).println() }.also { it.println() }
+    measureTime { part2(input, 100).println() }.also { it.println() }
 }
