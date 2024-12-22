@@ -3,10 +3,11 @@ package aoc2024
 import aoc2024.Day21.*
 import kotlin.math.min
 
-typealias RouteList = Map<Pair<String, String>, Set<String>>
+typealias MovePair = Pair<Char, Char>
+typealias RouteList = Map<MovePair, Set<String>>
 
 class Day21 {
-    data class Connection(val from: String, val to: String, val direction: Char)
+    data class Connection(val from: Char, val to: Char, val direction: Char)
     data class Keypad(val connections: List<Connection>) {
         val routes = routes()
 
@@ -22,7 +23,7 @@ class Day21 {
             }
         }
 
-        private fun shortestPaths(from: String, to: String): Set<String> {
+        private fun shortestPaths(from: Char, to: Char): Set<String> {
             if (from == to) return setOf("")
 
             val directConnection = connections.filter { it.from == from && it.to == to }
@@ -32,7 +33,7 @@ class Day21 {
             val queue = ArrayDeque<Pair<Connection, String>>()
             connections.filter { it.from == from }.forEach { queue.add(Pair(it, it.direction.toString())) }
 
-            val visited = mutableSetOf<String>()
+            val visited = mutableSetOf<Char>()
             var best = Integer.MAX_VALUE
 
             val allPaths = buildList {
@@ -74,10 +75,10 @@ fun String.parsePad(): Keypad {
                     val left = if (col == 0) "" else rows[row][col - 1]
                     val right = if (col == rows[0].size - 1) "" else rows[row][col + 1]
 
-                    if (up.isNotEmpty()) this.add(Connection(label, up, '^'))
-                    if (down.isNotEmpty()) this.add(Connection(label, down, 'v'))
-                    if (left.isNotEmpty()) this.add(Connection(label, left, '<'))
-                    if (right.isNotEmpty()) this.add(Connection(label, right, '>'))
+                    if (up.isNotEmpty()) this.add(Connection(label[0], up[0], '^'))
+                    if (down.isNotEmpty()) this.add(Connection(label[0], down[0], 'v'))
+                    if (left.isNotEmpty()) this.add(Connection(label[0], left[0], '<'))
+                    if (right.isNotEmpty()) this.add(Connection(label[0], right[0], '>'))
                 }
             }
         }
@@ -86,22 +87,35 @@ fun String.parsePad(): Keypad {
     return Keypad(connections)
 }
 
-fun main() {
-    val testInput = """
-        029A
-        980A
-        179A
-        456A
-        379A
-    """.trimIndent().lines()
+val cache = mutableMapOf<Pair<MovePair, Int>, Long>()
 
-    val routes = routes()
+private fun shortestRoute(fromTo: MovePair, level: Int, routes: RouteList): Long {
+    val cacheKey = Pair(fromTo, level)
 
-    check(part1(testInput, routes) == 126384L)
+    return cache.getOrPut(cacheKey) {
+        if (level == 0) return 1L
 
-    val input = readAsLines("Day21")
-    part1(input, routes).println() // 176452
-    part2(input, routes).println()
+        val next = routes[fromTo]!!.map { "A" + it + "A" }
+
+        next.minOf {
+            it.zipWithNext().sumOf { p -> shortestRoute(p, level - 1, routes) }
+        }
+    }
+}
+
+private fun numberPart(code: String) = code.removePrefix("0").removeSuffix("A").toLong()
+
+private fun nextSequence(sequences: Set<String>, routes: RouteList): Set<String> {
+    val nextSequences = sequences.flatMap { seq ->
+        ("A$seq").zipWithNext().map { fromTo ->
+            routes[fromTo]!!.map { it + "A" }
+        }.reduce { l1, l2 ->
+            buildList { l1.forEach { s1 -> l2.forEach { s2 -> add(s1 + s2) } } }
+        }
+    }
+
+    val shortest = nextSequences.minOf { it.length }
+    return nextSequences.filter { seq -> seq.length == shortest }.toSet()
 }
 
 private fun routes(): RouteList {
@@ -127,6 +141,25 @@ private fun routes(): RouteList {
     return numericKeypad.routes + directionKeypad.routes
 }
 
+fun main() {
+    val testInput = """
+        029A
+        980A
+        179A
+        456A
+        379A
+    """.trimIndent().lines()
+
+    val routes = routes()
+
+    check(part1(testInput, routes) == 126384L)
+
+    val input = readAsLines("Day21")
+    part1(input, routes).println() // 176452
+    part2(input, routes).println()
+}
+
+
 private fun part1(input: List<String>, routes: RouteList): Long {
     return input.sumOf { code ->
         var sequences = setOf(code)
@@ -137,44 +170,10 @@ private fun part1(input: List<String>, routes: RouteList): Long {
     }
 }
 
-private fun numberPart(code: String) = code.removePrefix("0").removeSuffix("A").toLong()
-
-private fun nextSequence(sequences: Set<String>, routes: RouteList): Set<String> {
-    val nextSequences = sequences.flatMap { seq ->
-        ("A$seq").zipWithNext().map { (from, to) ->
-            routes[Pair(from.toString(), to.toString())]!!.map { it + "A" }
-        }.reduce { l1, l2 ->
-            buildList { l1.forEach { s1 -> l2.forEach { s2 -> add(s1 + s2) } } }
-        }
-    }
-
-    val shortest = nextSequences.minOf { it.length }
-    return nextSequences.filter { seq -> seq.length == shortest }.toSet()
-}
-
-val cache = mutableMapOf<Pair<Pair<String, String>, Int>, Long>()
-
-private fun shortestRoute(fromTo: Pair<String, String>, level: Int, routes: RouteList): Long {
-    val cacheKey = Pair(fromTo, level)
-
-    return cache.getOrPut(cacheKey) {
-        if (level == 0) return 1L
-
-        val next = routes[fromTo]!!.map { "A" + it + "A" }
-
-        next.minOf {
-            val pairs = it.zipWithNext().map { p -> Pair(p.first.toString(), p.second.toString()) }
-
-            pairs.sumOf { p -> shortestRoute(p, level - 1, routes) }
-        }
-    }
-}
-
 private fun part2(input: List<String>, routes: RouteList): Long {
-    val results = input.map { code ->
-        "A$code".zipWithNext().map { Pair(it.first.toString(), it.second.toString()) }
-            .sumOf { shortestRoute(it, 26, routes) * numberPart(code) }
+    return input.sumOf { code ->
+        "A$code".zipWithNext().sumOf {
+            shortestRoute(it, 26, routes) * numberPart(code)
+        }
     }
-
-    return results.sum()
 }
