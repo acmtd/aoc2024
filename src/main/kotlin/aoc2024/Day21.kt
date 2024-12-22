@@ -93,10 +93,19 @@ private fun shortestRoute(fromTo: MovePair, level: Int, routes: RouteList): Long
     val cacheKey = Pair(fromTo, level)
 
     return cache.getOrPut(cacheKey) {
+        // if no more levels to explore, reduces to counting the pairs
         if (level == 0) return 1L
 
+        // every move begins with the robot either at the default position (A)
+        // or follows a previous move, which always ends with pressing a button,
+        // so we know that the directions we get from the routing table need
+        // to be prefixed and suffixed with A.
+        // Because we start and end at A every time, we also know that whenever
+        // we encounter this same sequence we will get the same sequence of controlling
+        // keys, so we can cache/memoize the output
         val next = routes[fromTo]!!.map { "A" + it + "A" }
 
+        // then take these pairs and see what they map to at the next keypad
         next.minOf {
             it.zipWithNext().sumOf { p -> shortestRoute(p, level - 1, routes) }
         }
@@ -160,7 +169,6 @@ fun main() {
     part2(input, routes, 26).println()
 }
 
-
 private fun part1(input: List<String>, routes: RouteList): Long {
     return input.sumOf { code ->
         var sequences = setOf(code)
@@ -173,8 +181,6 @@ private fun part1(input: List<String>, routes: RouteList): Long {
 
 private fun part2(input: List<String>, routes: RouteList, levels: Int): Long {
     return input.sumOf { code ->
-        "A$code".zipWithNext().sumOf {
-            shortestRoute(it, levels, routes) * numberPart(code)
-        }
+        numberPart(code) * "A$code".zipWithNext().sumOf { shortestRoute(it, levels, routes) }
     }
 }
