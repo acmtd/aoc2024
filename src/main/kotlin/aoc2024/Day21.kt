@@ -3,12 +3,14 @@ package aoc2024
 import aoc2024.Day21.*
 import kotlin.math.min
 
+typealias RouteList = Map<Pair<String, String>, Set<String>>
+
 class Day21 {
     data class Connection(val from: String, val to: String, val direction: Char)
     data class Keypad(val connections: List<Connection>) {
         val routes = routes()
 
-        private fun routes(): Map<Pair<String, String>, Set<String>> {
+        private fun routes(): RouteList {
             val buttons = connections.map { it.from }.toSet()
 
             return buildMap {
@@ -99,9 +101,10 @@ fun main() {
 
     val input = readAsLines("Day21")
     part1(input, routes).println() // 176452
+    part2(input, routes).println()
 }
 
-private fun routes(): Map<Pair<String, String>, Set<String>> {
+private fun routes(): RouteList {
     val numericKeypad = """
      +---+---+---+
      | 7 | 8 | 9 |
@@ -124,17 +127,19 @@ private fun routes(): Map<Pair<String, String>, Set<String>> {
     return numericKeypad.routes + directionKeypad.routes
 }
 
-private fun part1(input: List<String>, routes: Map<Pair<String, String>, Set<String>>): Long {
+private fun part1(input: List<String>, routes: RouteList): Long {
     return input.sumOf { code ->
         var sequences = setOf(code)
 
         repeat(3) { sequences = nextSequence(sequences, routes) }
 
-        sequences.minOf { it.length } * code.removePrefix("0").removeSuffix("A").toLong()
+        sequences.minOf { it.length } * numberPart(code)
     }
 }
 
-private fun nextSequence(sequences: Set<String>, routes: Map<Pair<String, String>, Set<String>>): Set<String> {
+private fun numberPart(code: String) = code.removePrefix("0").removeSuffix("A").toLong()
+
+private fun nextSequence(sequences: Set<String>, routes: RouteList): Set<String> {
     val nextSequences = sequences.flatMap { seq ->
         ("A$seq").zipWithNext().map { (from, to) ->
             routes[Pair(from.toString(), to.toString())]!!.map { it + "A" }
@@ -145,4 +150,31 @@ private fun nextSequence(sequences: Set<String>, routes: Map<Pair<String, String
 
     val shortest = nextSequences.minOf { it.length }
     return nextSequences.filter { seq -> seq.length == shortest }.toSet()
+}
+
+val cache = mutableMapOf<Pair<Pair<String, String>, Int>, Long>()
+
+private fun shortestRoute(fromTo: Pair<String, String>, level: Int, routes: RouteList): Long {
+    val cacheKey = Pair(fromTo, level)
+
+    return cache.getOrPut(cacheKey) {
+        if (level == 0) return 1L
+
+        val next = routes[fromTo]!!.map { "A" + it + "A" }
+
+        next.minOf {
+            val pairs = it.zipWithNext().map { p -> Pair(p.first.toString(), p.second.toString()) }
+
+            pairs.sumOf { p -> shortestRoute(p, level - 1, routes) }
+        }
+    }
+}
+
+private fun part2(input: List<String>, routes: RouteList): Long {
+    val results = input.map { code ->
+        "A$code".zipWithNext().map { Pair(it.first.toString(), it.second.toString()) }
+            .sumOf { shortestRoute(it, 26, routes) * numberPart(code) }
+    }
+
+    return results.sum()
 }
