@@ -153,10 +153,11 @@ fun main() {
     val routes = routes()
 
     check(part1(testInput, routes) == 126384L)
+    check(part2(testInput, routes, 3) == 126384L)
 
     val input = readAsLines("Day21")
-    part1(input, routes).println() // 176452
-    part2(input, routes).println()
+    part1(input, routes).println()
+    part2(input, routes, 26).println()
 }
 
 
@@ -170,10 +171,10 @@ private fun part1(input: List<String>, routes: RouteList): Long {
     }
 }
 
-private fun part2(input: List<String>, routes: RouteList): Long {
+private fun part2(input: List<String>, routes: RouteList, levels: Int): Long {
     return input.sumOf { code ->
         "A$code".zipWithNext().sumOf {
-            shortestRoute(it, 26, routes) * numberPart(code)
+            shortestRoute(it, levels, routes) * numberPart(code)
         }
     }
 }
