@@ -34,32 +34,27 @@ class Day20 {
         }
 
         private fun dijkstra(graph: Graph<Vec2>, start: Vec2): Map<Vec2, Vec2?> {
-            val set: MutableSet<Vec2> = mutableSetOf()
+            val distancesMap = graph.vertices.associateWith { Int.MAX_VALUE }.toMutableMap().apply { this[start] = 0 }
+            val visited: MutableSet<Vec2> = mutableSetOf()
 
-            val delta = graph.vertices.associateWith { Int.MAX_VALUE }.toMutableMap()
-            delta[start] = 0
+            return buildMap {
+                while (visited != graph.vertices) {
+                    // start with the unvisited node with the shortest available path
+                    val node = distancesMap.filter { !visited.contains(it.key) }.minBy { it.value }.key
 
-            val previous: MutableMap<Vec2, Vec2?> = graph.vertices.associateWith { null }.toMutableMap()
+                    // see whether this node is the closest in total distance for any of the nodes it connects to
+                    graph.edges.getValue(node).minus(visited).forEach { neighbour ->
+                        val newDistance = distancesMap.getValue(node) + graph.weights.getValue(Pair(node, neighbour))
 
-            while (set != graph.vertices) {
-                val v: Vec2 = delta
-                    .filter { !set.contains(it.key) }
-                    .minBy { it.value }
-                    .key
-
-                graph.edges.getValue(v).minus(set).forEach { neighbor ->
-                    val newPath = delta.getValue(v) + graph.weights.getValue(Pair(v, neighbor))
-
-                    if (newPath < delta.getValue(neighbor)) {
-                        delta[neighbor] = newPath
-                        previous[neighbor] = v
+                        if (newDistance < distancesMap.getValue(neighbour)) {
+                            distancesMap[neighbour] = newDistance
+                            put(neighbour, node)
+                        }
                     }
+
+                    visited.add(node)
                 }
-
-                set.add(v)
             }
-
-            return previous.toMap()
         }
 
         fun cheatSavings(wall: Vec2) =
