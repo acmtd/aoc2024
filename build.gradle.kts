@@ -10,6 +10,7 @@ sourceSets {
 
 dependencies {
     implementation( "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.0")
+    implementation("guru.nidi:graphviz-kotlin:0.18.1")
 }
 
 tasks {
